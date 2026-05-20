@@ -1,0 +1,2 @@
+Place your resume PDF here and rename it to Shivam_Maurya_Resume.pdf.
+Then update src/data/profile.js -> resumeUrl to /Shivam_Maurya_Resume.pdf
