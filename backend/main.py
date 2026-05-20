@@ -18,6 +18,7 @@ DEFAULT_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:3000",
+    "https://advanced-ai-1gz7.onrender.com",
     "https://advanced-ai-shivam.vercel.app",
 ]
 origins = list(set(ALLOWED_ORIGINS + DEFAULT_ORIGINS)) if ALLOWED_ORIGINS[0] else DEFAULT_ORIGINS
