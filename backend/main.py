@@ -10,25 +10,13 @@ from groq import Groq
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 load_dotenv()
 
-app = FastAPI(title="Shivam Nexus API")
+app = FastAPI(title="Shivam Nexus API", version="1.0.0")
 
-# Allow requests from Vercel frontend & local dev
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
-DEFAULT_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:3000",
-    "https://advanced-ai-1gz7.onrender.com",
-    "https://advanced-ai-shivam.vercel.app",
-    "https://advanced-43nmp5w78-shivamrk022s-projects.vercel.app",
-    "https://nexus.shivamrk022.dev",
-]
-origins = list(set(ALLOWED_ORIGINS + DEFAULT_ORIGINS)) if ALLOWED_ORIGINS[0] else DEFAULT_ORIGINS
-
+# Allow all Vercel preview deployments + custom domain + localhost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -48,6 +36,10 @@ class AskRequest(BaseModel):
     user_message: str
     history: List[ChatMessage] = []
 
+@app.get("/")
+def root():
+    return {"message": "Shivam Nexus API is running", "docs": "/docs", "health": "/api/health"}
+
 @app.post("/api/ask")
 async def ask_groq(req: AskRequest):
     global client
@@ -59,8 +51,8 @@ async def ask_groq(req: AskRequest):
 
     if not client:
         raise HTTPException(
-            status_code=500,
-            detail="GROQ_API_KEY is not configured. Please add GROQ_API_KEY=your_key in the .env file and restart/verify the server."
+            status_code=503,
+            detail="AI service is not configured. GROQ_API_KEY is missing on the server."
         )
 
     try:
@@ -77,16 +69,17 @@ async def ask_groq(req: AskRequest):
         )
         return {"response": completion.choices[0].message.content}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"AI request failed: {str(e)}")
 
 @app.get("/api/health")
 def health_check():
     global client
     if not client:
-        groq_key = os.getenv("GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY")
-        if groq_key:
-            client = Groq(api_key=groq_key)
+        key = os.getenv("GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY")
+        if key:
+            client = Groq(api_key=key)
     return {
         "status": "ok",
-        "groq_configured": client is not None
+        "groq_configured": client is not None,
+        "model": "llama-3.3-70b-versatile"
     }
