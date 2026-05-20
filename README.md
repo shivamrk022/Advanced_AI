@@ -13,6 +13,7 @@
   <a href="https://github.com/shivamrk022/Advanced_AI"><img src="https://img.shields.io/github/stars/shivamrk022/Advanced_AI?style=social" alt="GitHub Stars" /></a>
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" alt="Status" />
+  <a href="https://nexus.shivamrk022.dev"><img src="https://img.shields.io/badge/Live%20Demo-nexus.shivamrk022.dev-6366f1?style=flat-square&logo=vercel" alt="Live Demo" /></a>
 </p>
 
 <p align="center">
@@ -148,10 +149,12 @@ npm run dev
 
 | Service | URL |
 |---------|-----|
-| **Frontend Web UI** | http://localhost:5173 |
-| **Backend API** | http://localhost:8000/api |
-| **API Health Check** | http://localhost:8000/api/health |
-| **FastAPI Docs (Swagger)** | http://localhost:8000/docs |
+| **Frontend (Live)** | https://nexus.shivamrk022.dev |
+| **Backend API (Live)** | https://advanced-ai-1gz7.onrender.com |
+| **Local Frontend** | http://localhost:5173 |
+| **Local Backend** | http://localhost:8000/api |
+| **API Health Check** | https://advanced-ai-1gz7.onrender.com/api/health |
+| **FastAPI Docs (Swagger)** | https://advanced-ai-1gz7.onrender.com/docs |
 
 > **Note:** If port 5173 is busy, Vite auto-shifts to port `5174`. Check your terminal for the exact URL.
 
