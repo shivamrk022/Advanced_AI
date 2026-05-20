@@ -1,87 +1,232 @@
-# Shivam Nexus: AI Super Platform
+# <p align="center">🔮 SHIVAM NEXUS — AI SUPER PLATFORM</p>
 
-Shivam Nexus is a multi-module workspace platform providing specialized AI assistance across education, careers, health, legal rights, and business workflows, built on top of **React 18 + Vite** for the frontend and **FastAPI** for the backend proxy.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Groq-f59e0b?style=for-the-badge&logo=google-cloud&logoColor=white" alt="Groq" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
+</p>
 
-It leverages Groq's high-speed **LLaMA 3.3 70B** models with local offline mock fallbacks for resilient runtime operations.
+<p align="center">
+  <a href="https://github.com/shivamrk022/Advanced_AI"><img src="https://img.shields.io/github/stars/shivamrk022/Advanced_AI?style=social" alt="GitHub Stars" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" alt="Status" />
+</p>
+
+<p align="center">
+  <strong>A production-grade, multi-module AI platform for students, professionals & businesses.</strong><br/>
+  Built by <a href="https://github.com/shivamrk022">Shivam Maurya</a> · Mumbai, India
+</p>
 
 ---
 
-## 📂 Clean Architecture Split
+## 📄 Project Overview
 
-The project has been separated into independent frontend and backend workspaces:
+**Shivam Nexus** is a full-stack AI Super Platform powered by **Groq's LLaMA 3.3 70B** model — providing 8 specialized AI modules across education, careers, health, legal guidance, job search, portfolio generation, and business planning.
 
-```txt
-advanced_ai/
-├── backend/                  # FastAPI Python Proxy Backend
-│   ├── main.py               # API Gateway & LLaMA proxy handlers
-│   ├── requirements.txt      # Python dependencies (fastapi, groq, dotenv, etc)
-│   └── .env                  # Backend API keys configuration
-├── frontend/                 # React & Vite Frontend
-│   ├── src/                  # React Workspace (Components, Pages, Services)
-│   ├── public/               # Static Assets
-│   ├── index.html            # SPA Entrypoint
-│   ├── package.json          # Node dependencies
-│   ├── tailwind.config.js    # Glassmorphism & premium typography config
-│   └── .env                  # Frontend build configs
-├── run_all.bat               # Root-level batch script to launch both servers with one click!
-└── .env                      # Global environment keys configuration
+The architecture uses a **decoupled frontend/backend design**:
+- The **React + Vite frontend** handles all UI interactions
+- The **FastAPI backend** securely proxies requests to Groq, keeping your API key safe on the server side
+
+> This project demonstrates: Full-Stack Development · LLM Integration · API Gateway Design · Prompt Engineering · Multi-Language UI · Secure Environment Management
+
+---
+
+## 🚀 AI Modules
+
+| # | Module | Description |
+|---|--------|-------------|
+| 🎓 | **Student Hub** | Study planner, quiz generator, ELI5 concept explainer |
+| 💼 | **AI Career & CV** | ATS resume builder, cover letter optimizer, email templates |
+| 🩺 | **Health Assistant** | Symptom checker, medication guide, wellness routines |
+| ⚖️ | **Legal Advisor** | Indian law explainer, rights definitions, legal drafts |
+| 🔍 | **Live Job Search** | Job query simulation with city & role filters |
+| 💻 | **Portfolio Builder** | Instant Markdown portfolio generator |
+| 📊 | **Business Intelligence** | Startup planner, competitor analysis, marketing strategy |
+| 💬 | **General AI Chat** | Full-page conversational workspace with chat history |
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18, Vite, Tailwind CSS, Lucide Icons |
+| **Backend** | FastAPI, Python 3.10+, Uvicorn |
+| **AI Model** | LLaMA 3.3 70B via Groq API |
+| **Language** | English + Hindi (dual localization) |
+| **Theme** | Dark / Light mode with glassmorphism |
+
+---
+
+## 📂 Folder Structure
+
+```
+Advanced_AI/
+│
+├── backend/
+│   ├── main.py               # FastAPI server — /api/ask & /api/health
+│   ├── requirements.txt      # Python dependencies
+│   └── .env.example          # Backend env template
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # Navbar, Footer, ChatBot, Logo
+│   │   ├── pages/            # Home, ModulePage, ChatPage
+│   │   ├── data/             # modules.js, translations.js, profile.js
+│   │   ├── services/         # api.js (Axios backend client)
+│   │   └── context/          # ThemeContext (dark/light mode)
+│   ├── public/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js        # Port 5173 config
+│   └── tailwind.config.js
+│
+├── .env.example              # Root env template
+├── .gitignore
+├── run_all.bat               # One-click Windows launcher
+└── README.md
 ```
 
 ---
 
-## ⚡ Direct Launch (Windows)
+## ⚙️ Setup & Installation
 
-To start both the frontend and backend servers automatically in separate console windows, double-click the root batch script:
-
+### Step 1 — Clone the Repository
 ```bash
-run_all.bat
+git clone https://github.com/shivamrk022/Advanced_AI.git
+cd Advanced_AI
 ```
+
+### Step 2 — Configure Environment Variables
+Create a `.env` file in the project root:
+```bash
+copy .env.example .env
+```
+
+Then open `.env` and add your free Groq API key:
+```env
+GROQ_API_KEY=gsk_your_free_key_here
+VITE_BACKEND_URL=http://localhost:8000
+VITE_GITHUB_USERNAME=shivamrk022
+```
+
+> Get your **free** Groq API key at → [https://console.groq.com](https://console.groq.com)
 
 ---
 
-## 🛠️ Manual Launch Instructions
+## ▶️ Running the Project
 
-### 1. Backend Setup (FastAPI)
-Navigate to the `backend/` folder, install requirements, and run the server:
+### ⚡ Windows One-Click Launch
+Double-click `run_all.bat` **or** run in PowerShell:
+```powershell
+.\run_all.bat
+```
+This opens **two terminal windows** — one for the backend and one for the frontend.
+
+---
+
+### 🐍 Backend (Manual)
 ```bash
 cd backend
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 uvicorn main:app --port 8000 --reload
 ```
-*The backend API documentation is available at [http://localhost:8000/docs](http://localhost:8000/docs).*
 
-### 2. Frontend Setup (React/Vite)
-Navigate to the `frontend/` folder, install dependencies, and run:
+### ⚛️ Frontend (Manual)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-*The web interface is available at [http://localhost:5173](http://localhost:5173).*
 
 ---
 
-## 🔑 AI Credentials Setup
-Create or open the `.env` file in the project root folder:
-```env
-GROQ_API_KEY=gsk_your_groq_api_key_here
+## 🌐 Access URLs
+
+| Service | URL |
+|---------|-----|
+| **Frontend Web UI** | http://localhost:5173 |
+| **Backend API** | http://localhost:8000/api |
+| **API Health Check** | http://localhost:8000/api/health |
+| **FastAPI Docs (Swagger)** | http://localhost:8000/docs |
+
+> **Note:** If port 5173 is busy, Vite auto-shifts to port `5174`. Check your terminal for the exact URL.
+
+---
+
+## 🛰️ API Reference
+
+### `POST /api/ask`
+Proxies multi-turn prompts to Groq LLaMA 3.3 70B.
+
+**Request Body:**
+```json
+{
+  "system_prompt": "You are a specialized legal assistant.",
+  "user_message": "Explain the Right to Information Act.",
+  "history": []
+}
 ```
-The FastAPI backend reads this file and securely relays requests to Groq's supercomputer without exposing your private API key to the client's browser!
+
+**Response:**
+```json
+{
+  "response": "The RTI Act (2005) grants Indian citizens the right to..."
+}
+```
+
+### `GET /api/health`
+Returns server and Groq configuration status.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "groq_configured": true
+}
+```
 
 ---
 
-## 🚀 Key Modules
-1. **Student Hub**: Study planners, explanation guides (ELI5 mode), and interactive mock quizzes.
-2. **AI Career & CV**: ATS resume builder, cover letter optimizer, and professional email draft tools.
-3. **Health Assistant**: Safe symptom triage, medication profiles, wellness routines, and wellness Q&A.
-4. **Legal Advisor**: Regional law advisor, rights guides, and legal explanations (with disclaimer alerts).
-5. **Live Job Search**: Interactive job search simulation matching Mumbai parameters.
-6. **Portfolio Builder**: Markdown-based personal developer portfolio generator.
-7. **Business Intelligence**: Startup plans outlines, competitor analysis, and marketing planners.
-8. **General AI Chat**: Full-page conversational workspace interface.
+## 🔧 Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| `localhost:5173` not loading | Port 5173 is occupied by another process | Try `http://localhost:5174` or close other Node servers |
+| `500 Internal Server Error` | `GROQ_API_KEY` not set | Add key to `.env` and restart the backend |
+| `run_all.bat` not recognized | Running in PowerShell instead of CMD | Type `.\run_all.bat` with the `.\` prefix |
+| Frontend can't reach backend | Backend not started | Run backend first: `uvicorn main:app --port 8000` |
 
 ---
 
-## 🎨 Professional Themes & Hindi Localization
-- **Theme Switcher**: Fluid dark/light theme state with high-contrast, fully hydrated styles.
-- **Multilingual Localization**: Effortless runtime switching between English (`en`) and Hindi (`hi`).
+## 🔐 Security
+
+- Your `GROQ_API_KEY` is **only loaded server-side** in the FastAPI backend
+- The key is **never exposed** to the browser or included in any frontend bundle
+- The `.env` file is excluded from git via `.gitignore`
+
+---
+
+## 👤 Author
+
+**Shivam Maurya**
+Aspiring AI Engineer · B.Tech AI/ML · St. John College of Engineering and Management (2022–2026)
+
+<p>
+  <a href="https://github.com/shivamrk022">
+    <img src="https://img.shields.io/badge/GitHub-shivamrk022-181717?style=for-the-badge&logo=github" />
+  </a>
+  <a href="https://www.linkedin.com/in/shivam-maurya-4628a3291/">
+    <img src="https://img.shields.io/badge/LinkedIn-Shivam_Maurya-0A66C2?style=for-the-badge&logo=linkedin" />
+  </a>
+  <a href="mailto:shivamaurya9702@gmail.com">
+    <img src="https://img.shields.io/badge/Email-shivamaurya9702@gmail.com-EA4335?style=for-the-badge&logo=gmail" />
+  </a>
+</p>
+
+---
+
+<p align="center">⭐ Star this repo if you found it useful!</p>
