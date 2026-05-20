@@ -12,10 +12,19 @@ load_dotenv()
 
 app = FastAPI(title="Shivam Nexus API")
 
-# Enable CORS for the local Vite dev server
+# Allow requests from Vercel frontend & local dev
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
+DEFAULT_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "https://advanced-ai-shivam.vercel.app",
+]
+origins = list(set(ALLOWED_ORIGINS + DEFAULT_ORIGINS)) if ALLOWED_ORIGINS[0] else DEFAULT_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
