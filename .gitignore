@@ -8,3 +8,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 *.db
+backend/storage/uploads/
+backend/storage/vector_db/
+backend/storage/rag_metadata.json

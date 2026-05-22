@@ -33,4 +33,66 @@ export async function askGroq(systemPrompt, userMessage, history = []) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// RAG Document Chat API functions
+// ---------------------------------------------------------------------------
+
+/** Upload a document for RAG indexing */
+export async function uploadRagDocument(file) {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await api.post('/rag/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,  // 2 minutes for large files
+    })
+    return res.data
+  } catch (error) {
+    console.error('RAG Upload Error:', error)
+    const serverMsg = error.response?.data?.detail
+    if (serverMsg) throw new Error(serverMsg)
+    throw new Error('Failed to upload document.')
+  }
+}
+
+/** Ask a question about an uploaded document */
+export async function askRagQuestion(documentId, question) {
+  try {
+    const res = await api.post('/rag/ask', {
+      document_id: documentId,
+      question,
+    })
+    return res.data
+  } catch (error) {
+    console.error('RAG Ask Error:', error)
+    const serverMsg = error.response?.data?.detail
+    if (serverMsg) throw new Error(serverMsg)
+    throw new Error('Failed to get answer from document.')
+  }
+}
+
+/** Get list of all indexed documents */
+export async function getRagDocuments() {
+  try {
+    const res = await api.get('/rag/documents')
+    return res.data.documents
+  } catch (error) {
+    console.error('RAG Documents Error:', error)
+    return []
+  }
+}
+
+/** Delete an indexed document */
+export async function deleteRagDocument(documentId) {
+  try {
+    const res = await api.delete(`/rag/documents/${documentId}`)
+    return res.data
+  } catch (error) {
+    console.error('RAG Delete Error:', error)
+    const serverMsg = error.response?.data?.detail
+    if (serverMsg) throw new Error(serverMsg)
+    throw new Error('Failed to delete document.')
+  }
+}
+
 export default api

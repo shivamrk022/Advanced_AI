@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
+from routes.rag import router as rag_router
 
 # Load environment variables from parent workspace folder or current folder
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -28,6 +29,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include RAG Document Chat routes
+app.include_router(rag_router)
 
 # Initialize Groq client securely using only GROQ_API_KEY
 groq_key = os.getenv("GROQ_API_KEY")
@@ -134,6 +138,13 @@ def health_check():
     db_status = check_db_status()
     ai_status = "healthy" if client is not None else "unconfigured: GROQ_API_KEY is missing"
     
+    # RAG subsystem status
+    try:
+        from services.rag_service import check_rag_status
+        rag_status = check_rag_status()
+    except Exception:
+        rag_status = {"rag": "unavailable", "vector_db": "not loaded"}
+
     # Define overall status based on backend and database health
     overall_status = "healthy"
     if db_status != "healthy":
@@ -146,5 +157,6 @@ def health_check():
         "backend": "healthy",
         "database": db_status,
         "ai_provider": ai_status,
+        **rag_status,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }

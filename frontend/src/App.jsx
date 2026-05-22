@@ -8,6 +8,7 @@ import ChatBot from './components/common/ChatBot'
 import Home from './pages/Home'
 import ModulePage from './pages/ModulePage'
 import ChatPage from './pages/ChatPage'
+import DocumentChat from './pages/DocumentChat'
 
 export default function App() {
   const [lang, setLang] = useState('en')
@@ -36,6 +37,7 @@ export default function App() {
                 <Route path="/" element={<Home lang={lang} />} />
                 <Route path="/module/:id" element={<ModulePage lang={lang} />} />
                 <Route path="/chat" element={<ChatPage lang={lang} />} />
+                <Route path="/document-chat" element={<DocumentChat />} />
               </Routes>
             </main>
           </div>

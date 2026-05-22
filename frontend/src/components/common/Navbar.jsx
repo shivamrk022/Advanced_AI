@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { MODULES } from '../../data/modules'
 import { translations } from '../../data/translations'
-import { Sun, Moon, Menu, X, ChevronDown } from 'lucide-react'
+import { Sun, Moon, Menu, X, ChevronDown, FileSearch } from 'lucide-react'
 import Logo from './Logo'
 
 export default function Navbar({ lang, setLang }) {
@@ -101,6 +101,16 @@ export default function Navbar({ lang, setLang }) {
             >
               {t.aiChat}
             </Link>
+
+            <Link 
+              to="/document-chat" 
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/document-chat' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              <FileSearch className="h-4 w-4" />
+              Doc Chat
+            </Link>
           </div>
 
           {/* Controls */}
@@ -158,6 +168,10 @@ export default function Navbar({ lang, setLang }) {
           </Link>
           <Link to="/chat" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
             {t.aiChat}
+          </Link>
+          <Link to="/document-chat" className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            <FileSearch className="h-4 w-4" />
+            Document Chat
           </Link>
 
           <div className="border-t border-black/10 dark:border-white/10 pt-3">

@@ -3,3 +3,8 @@ uvicorn[standard]
 groq
 python-dotenv
 pydantic
+python-multipart
+chromadb
+sentence-transformers
+PyMuPDF
+python-docx
