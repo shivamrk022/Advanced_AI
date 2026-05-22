@@ -39,8 +39,11 @@ export default function ChatPage({ lang }) {
     try {
       const answer = await askGroq(systemPrompt, userMsg, messages)
       setMessages(prev => [...prev, { role: 'assistant', content: answer }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Could not contact Groq LLaMA 3.3. Verify network config.' }])
+    } catch (error) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: `⚠️ **AI Service Error**: ${error.message || 'Could not contact Groq LLaMA 3.3. Verify network config.'}` }
+      ])
     } finally {
       setLoading(false)
     }

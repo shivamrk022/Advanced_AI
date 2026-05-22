@@ -39,8 +39,11 @@ export default function ChatBot({ lang }) {
     try {
       const answer = await askGroq(systemPrompt, userMsg, messages)
       setMessages(prev => [...prev, { role: 'assistant', content: answer }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'An unexpected error occurred. Please check your connection.' }])
+    } catch (error) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: `⚠️ **AI Service Error**: ${error.message || 'An unexpected error occurred. Please check your connection.'}` }
+      ])
     } finally {
       setLoading(false)
     }

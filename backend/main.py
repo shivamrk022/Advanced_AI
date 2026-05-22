@@ -1,8 +1,10 @@
 import os
+import sqlite3
+from datetime import datetime
+from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
 from dotenv import load_dotenv
 from groq import Groq
 
@@ -12,20 +14,29 @@ load_dotenv()
 
 app = FastAPI(title="Shivam Nexus API", version="1.0.0")
 
-# Allow all Vercel preview deployments + custom domain + localhost
+# Setup CORS Origins dynamically from environment
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000")
+if cors_origins_env:
+    origins = [orig.strip() for orig in cors_origins_env.split(",") if orig.strip()]
+else:
+    origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=origins,
+    allow_credentials=True if "*" not in origins else False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize Groq client
-groq_key = os.getenv("GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY")
+# Initialize Groq client securely using only GROQ_API_KEY
+groq_key = os.getenv("GROQ_API_KEY")
 client = None
-if groq_key:
-    client = Groq(api_key=groq_key)
+if groq_key and groq_key.strip():
+    try:
+        client = Groq(api_key=groq_key.strip())
+    except Exception as e:
+        print(f"Failed to initialize Groq client: {e}")
 
 class ChatMessage(BaseModel):
     role: str
@@ -35,19 +46,53 @@ class AskRequest(BaseModel):
     system_prompt: str
     user_message: str
     history: List[ChatMessage] = []
+    temperature: Optional[float] = 0.4
+
+def check_db_status() -> str:
+    db_url = os.getenv("DATABASE_URL", "sqlite:///./shivam_nexus.db")
+    try:
+        if "sqlite" in db_url:
+            # Extract local path from sqlite URL
+            db_path = db_url
+            for prefix in ["sqlite:///", "sqlite://"]:
+                if db_path.startswith(prefix):
+                    db_path = db_path[len(prefix):]
+                    break
+            # Try to connect and verify connection
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.close()
+            conn.close()
+            return "healthy"
+        else:
+            # Fallback/assume healthy for non-sqlite mock checks
+            return "healthy"
+    except Exception as e:
+        return f"unhealthy: {str(e)}"
 
 @app.get("/")
 def root():
-    return {"message": "Shivam Nexus API is running", "docs": "/docs", "health": "/api/health"}
+    return {
+        "message": "Shivam Nexus API is running",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
 
 @app.post("/api/ask")
 async def ask_groq(req: AskRequest):
     global client
-    # Re-read client if key was added after startup
+    # Re-initialize client if key was added/updated in env after startup
     if not client:
-        groq_key = os.getenv("GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY")
-        if groq_key:
-            client = Groq(api_key=groq_key)
+        groq_key = os.getenv("GROQ_API_KEY")
+        if groq_key and groq_key.strip():
+            try:
+                client = Groq(api_key=groq_key.strip())
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Groq client initialization failed: {str(e)}"
+                )
 
     if not client:
         raise HTTPException(
@@ -64,22 +109,42 @@ async def ask_groq(req: AskRequest):
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.4,
+            temperature=req.temperature if req.temperature is not None else 0.4,
             max_tokens=2048,
         )
         return {"response": completion.choices[0].message.content}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI request failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI request failed: {str(e)}"
+        )
 
 @app.get("/api/health")
 def health_check():
     global client
+    # Re-initialize client if key was added in env after startup
     if not client:
-        key = os.getenv("GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY")
-        if key:
-            client = Groq(api_key=key)
+        groq_key = os.getenv("GROQ_API_KEY")
+        if groq_key and groq_key.strip():
+            try:
+                client = Groq(api_key=groq_key.strip())
+            except Exception:
+                client = None
+
+    db_status = check_db_status()
+    ai_status = "healthy" if client is not None else "unconfigured: GROQ_API_KEY is missing"
+    
+    # Define overall status based on backend and database health
+    overall_status = "healthy"
+    if db_status != "healthy":
+        overall_status = "unhealthy"
+    elif client is None:
+        overall_status = "degraded"
+
     return {
-        "status": "ok",
-        "groq_configured": client is not None,
-        "model": "llama-3.3-70b-versatile"
+        "status": overall_status,
+        "backend": "healthy",
+        "database": db_status,
+        "ai_provider": ai_status,
+        "timestamp": datetime.utcnow().isoformat() + "Z"
     }

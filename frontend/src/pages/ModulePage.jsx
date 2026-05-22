@@ -81,8 +81,8 @@ export default function ModulePage({ lang }) {
     try {
       const res = await askGroq(systemPrompt, finalPrompt)
       setOutput(res)
-    } catch {
-      setOutput('An error occurred while generating the output. Please verify your internet connection or API settings.')
+    } catch (error) {
+      setOutput(`⚠️ **AI Service Error**: ${error.message || 'An error occurred while generating the output. Please verify your internet connection or API settings.'}`)
     } finally {
       setLoading(false)
     }

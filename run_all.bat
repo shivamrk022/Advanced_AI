@@ -6,7 +6,7 @@ echo  🚀 SHIVAM NEXUS - DUAL LAUNCHER
 echo =====================================================================
 echo.
 echo  Starting Shivam Nexus Backend (FastAPI on Port 8000)...
-start "Shivam Nexus Backend" cmd /k "cd backend && uvicorn main:app --port 8000 --reload"
+start "Shivam Nexus Backend" cmd /k "cd backend && python -m uvicorn main:app --port 8000 --reload"
 
 echo  Starting Shivam Nexus Frontend (React/Vite on Port 5173)...
 start "Shivam Nexus Frontend" cmd /k "cd frontend && npm run dev"

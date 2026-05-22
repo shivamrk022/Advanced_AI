@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || 'https://advanced-ai-1gz7.onrender.com') + '/api'
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+const API_BASE = `${API_BASE_URL}/api`;
 
 const api = axios.create({ baseURL: API_BASE, timeout: 90000 })
 
@@ -19,16 +20,16 @@ export async function askGroq(systemPrompt, userMessage, history = []) {
     // Backend returned a structured error
     const serverMsg = error.response?.data?.detail
     if (serverMsg) {
-      return `⚠️ ${serverMsg}`
+      throw new Error(serverMsg)
     }
 
-    // Network / timeout — likely Render cold start
+    // Network / timeout — likely server not running or starting up
     if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      return `⏳ The AI server is waking up (Render free tier sleeps after inactivity). Please wait 30–60 seconds and try again.`
+      throw new Error('The AI server request timed out. Please wait a moment and try again.')
     }
 
     // Generic connection failure
-    return `⚠️ Could not reach the AI backend. The server may be starting up — please try again in a moment.\n\nBackend: ${API_BASE}`
+    throw new Error('Could not reach the AI backend.')
   }
 }
 
