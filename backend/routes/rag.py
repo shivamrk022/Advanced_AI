@@ -140,15 +140,30 @@ async def ask_document(req: AskRagRequest):
             from groq import Groq
             client = Groq(api_key=groq_key.strip())
             rag_prompt = build_rag_prompt(req.question.strip(), sources)
-            completion = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": "You are a helpful document analysis assistant. Answer only from the provided context."},
-                    {"role": "user", "content": rag_prompt},
-                ],
-                temperature=0.3,
-                max_tokens=1024,
-            )
+            try:
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful document analysis assistant. Answer only from the provided context."},
+                        {"role": "user", "content": rag_prompt},
+                    ],
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+            except Exception as groq_err:
+                if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
+                    print("Rate limit hit on 70b model. Falling back to llama3-8b-8192 in RAG.")
+                    completion = client.chat.completions.create(
+                        model="llama3-8b-8192",
+                        messages=[
+                            {"role": "system", "content": "You are a helpful document analysis assistant. Answer only from the provided context."},
+                            {"role": "user", "content": rag_prompt},
+                        ],
+                        temperature=0.3,
+                        max_tokens=1024,
+                    )
+                else:
+                    raise groq_err
             answer = completion.choices[0].message.content
         except Exception as e:
             print(f"Groq RAG request failed, using fallback: {e}")

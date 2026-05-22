@@ -8,7 +8,6 @@ import ChatBot from './components/common/ChatBot'
 import Home from './pages/Home'
 import ModulePage from './pages/ModulePage'
 import ChatPage from './pages/ChatPage'
-import DocumentChat from './pages/DocumentChat'
 import ResumeAnalyzer from './pages/ResumeAnalyzer'
 import AgentWorkflow from './pages/AgentWorkflow'
 import JobSearch from './pages/JobSearch'
@@ -40,7 +39,6 @@ export default function App() {
                 <Route path="/" element={<Home lang={lang} />} />
                 <Route path="/module/:id" element={<ModulePage lang={lang} />} />
                 <Route path="/chat" element={<ChatPage lang={lang} />} />
-                <Route path="/document-chat" element={<DocumentChat />} />
                 <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
                 <Route path="/agent-workflow" element={<AgentWorkflow />} />
                 <Route path="/job-search" element={<JobSearch />} />

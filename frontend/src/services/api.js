@@ -145,4 +145,100 @@ export async function searchJobs(keyword, location, limit = 20) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Chat History API functions
+// ---------------------------------------------------------------------------
+
+/** Save chat history */
+export async function saveChatHistory(sessionId, module, userMessage, aiResponse) {
+  try {
+    const res = await api.post('/history/save', {
+      session_id: sessionId,
+      module,
+      user_message: userMessage,
+      ai_response: aiResponse
+    })
+    return res.data
+  } catch (error) {
+    console.error('Save Chat History Error:', error)
+    // we don't throw to avoid crashing the chat flow
+    return null
+  }
+}
+
+/** Get list of all chat sessions */
+export async function getHistorySessions() {
+  try {
+    const res = await api.get('/history/sessions')
+    return res.data.sessions
+  } catch (error) {
+    console.error('Get History Sessions Error:', error)
+    return []
+  }
+}
+
+/** Get a specific chat session's messages */
+export async function getHistorySession(sessionId) {
+  try {
+    const res = await api.get(`/history/sessions/${sessionId}`)
+    return res.data
+  } catch (error) {
+    console.error('Get History Session Error:', error)
+    throw new Error('Failed to get session messages.')
+  }
+}
+
+/** Delete a specific chat session */
+export async function deleteHistorySession(sessionId) {
+  try {
+    const res = await api.delete(`/history/sessions/${sessionId}`)
+    return res.data
+  } catch (error) {
+    console.error('Delete History Session Error:', error)
+    throw new Error('Failed to delete session.')
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Export API functions
+// ---------------------------------------------------------------------------
+
+export async function exportPdf(title, content) {
+  try {
+    const res = await api.post('/export/pdf', { title, content }, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    
+    // Convert title to safe filename
+    const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'report'
+    link.setAttribute('download', `${safeTitle}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+  } catch (error) {
+    console.error('PDF Export Error:', error)
+    throw new Error('Failed to export PDF.')
+  }
+}
+
+export async function exportDocx(title, content) {
+  try {
+    const res = await api.post('/export/docx', { title, content }, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    
+    // Convert title to safe filename
+    const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'report'
+    link.setAttribute('download', `${safeTitle}.docx`)
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+  } catch (error) {
+    console.error('DOCX Export Error:', error)
+    throw new Error('Failed to export DOCX.')
+  }
+}
+
 export default api

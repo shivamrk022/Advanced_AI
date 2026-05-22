@@ -11,6 +11,9 @@ from routes.rag import router as rag_router
 from routes.resume import router as resume_router
 from routes.agents import router as agents_router
 from routes.jobs import router as jobs_router
+from routes.history import router as history_router
+from routes.export import router as export_router
+from database import init_db
 
 # Load environment variables from parent workspace folder or current folder
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -33,11 +36,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include RAG Document Chat routes
+# Include routes
 app.include_router(rag_router)
 app.include_router(resume_router, prefix="/api/resume", tags=["Resume"])
 app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 app.include_router(jobs_router, prefix="/api/jobs", tags=["Jobs"])
+app.include_router(history_router, prefix="/api/history", tags=["History"])
+app.include_router(export_router, prefix="/api/export", tags=["Export"])
+
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 # Initialize Groq client securely using only GROQ_API_KEY
 groq_key = os.getenv("GROQ_API_KEY")
@@ -74,10 +83,10 @@ def check_db_status() -> str:
             cursor.execute("SELECT 1")
             cursor.close()
             conn.close()
-            return "healthy"
+            return "connected"
         else:
-            # Fallback/assume healthy for non-sqlite mock checks
-            return "healthy"
+            # Fallback/assume connected for non-sqlite mock checks
+            return "connected"
     except Exception as e:
         return f"unhealthy: {str(e)}"
 
@@ -116,12 +125,25 @@ async def ask_groq(req: AskRequest):
             messages.append({"role": msg.role, "content": msg.content})
         messages.append({"role": "user", "content": req.user_message})
 
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            temperature=req.temperature if req.temperature is not None else 0.4,
-            max_tokens=2048,
-        )
+        try:
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=req.temperature if req.temperature is not None else 0.4,
+                max_tokens=2048,
+            )
+        except Exception as groq_err:
+            if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
+                print("Rate limit hit on 70b model. Falling back to llama3-8b-8192.")
+                completion = client.chat.completions.create(
+                    model="llama3-8b-8192",
+                    messages=messages,
+                    temperature=req.temperature if req.temperature is not None else 0.4,
+                    max_tokens=2048,
+                )
+            else:
+                raise groq_err
+                
         return {"response": completion.choices[0].message.content}
     except Exception as e:
         raise HTTPException(
@@ -153,7 +175,7 @@ def health_check():
 
     # Define overall status based on backend and database health
     overall_status = "healthy"
-    if db_status != "healthy":
+    if db_status != "connected":
         overall_status = "unhealthy"
     elif client is None:
         overall_status = "degraded"

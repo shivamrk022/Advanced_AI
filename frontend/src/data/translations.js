@@ -24,7 +24,7 @@ export const translations = {
     noKeyAlert: "Offline Mode: Enter a query to see cached or simulated response. To activate live LLaMA 3.3, add VITE_GROQ_API_KEY in .env.",
     copyBtn: "Copy to Clipboard",
     copied: "Copied!",
-    aboutCreator: "Built by Shivam Maurya • Bahawalpur inspired, Mumbai engineered.",
+    aboutCreator: "Built by Shivam Maurya • Designed with purpose, engineered with precision.",
     githubLink: "GitHub Code",
     contactUs: "Contact",
     clearHistory: "Clear History",

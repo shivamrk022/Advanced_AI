@@ -29,7 +29,10 @@ export default function Home({ lang }) {
           </div>
 
           <h1 className="font-display text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl leading-[1.15]">
-            {t.tagline}
+            {t.tagline.split(',')[0]},{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">
+              {t.tagline.split(',').slice(1).join(',').trim()}
+            </span>
           </h1>
 
           <p className="mx-auto max-w-2xl text-base text-slate-500 dark:text-slate-400 sm:text-lg leading-relaxed">
@@ -91,7 +94,7 @@ export default function Home({ lang }) {
             return (
               <Link
                 key={m.id}
-                to={m.id === 'chat' ? '/chat' : `/module/${m.id}`}
+                to={m.id === 'chat' ? '/chat' : m.id === 'jobs' ? '/job-search' : `/module/${m.id}`}
                 className="group relative flex flex-col justify-between rounded-3xl border border-black/5 dark:border-white/5 bg-white dark:bg-slate-900/40 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/20 hover:shadow-xl dark:hover:bg-slate-900"
               >
                 <div className="space-y-4">

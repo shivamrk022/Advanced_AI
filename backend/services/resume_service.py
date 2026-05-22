@@ -64,12 +64,24 @@ def analyze_resume(resume_text: str, job_description: str) -> dict:
             {job_description}
             """
             
-            completion = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": prompt}],
-                temperature=0.1,  # Lower temperature for more deterministic/strict results
-                response_format={"type": "json_object"}
-            )
+            try:
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "system", "content": prompt}],
+                    temperature=0.1,  # Lower temperature for more deterministic/strict results
+                    response_format={"type": "json_object"}
+                )
+            except Exception as groq_err:
+                if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
+                    print("Rate limit hit on 70b model. Falling back to llama3-8b-8192 in resume analyzer.")
+                    completion = client.chat.completions.create(
+                        model="llama3-8b-8192",
+                        messages=[{"role": "system", "content": prompt}],
+                        temperature=0.1,
+                        response_format={"type": "json_object"}
+                    )
+                else:
+                    raise groq_err
             
             response_str = completion.choices[0].message.content
             result = json.loads(response_str)

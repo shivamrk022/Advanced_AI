@@ -8,15 +8,31 @@ def _call_groq(prompt: str, system: str = "You are a helpful AI assistant.", tem
     
     client = Groq(api_key=groq_key.strip())
     
-    completion = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=temperature,
-        max_tokens=2048,
-    )
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=temperature,
+            max_tokens=2048,
+        )
+    except Exception as groq_err:
+        if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
+            print("Rate limit hit on 70b model. Falling back to llama3-8b-8192.")
+            completion = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=temperature,
+                max_tokens=2048,
+            )
+        else:
+            raise groq_err
+            
     return completion.choices[0].message.content.strip()
 
 def get_planner_output(task: str, mode: str) -> str:

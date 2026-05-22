@@ -1,48 +1,64 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
-from services.history_service import save_chat_message, get_sessions, get_session_messages, delete_session
-from database import log_analytics_event
+from services.history_service import (
+    save_chat_interaction,
+    get_sessions,
+    get_session_messages,
+    delete_session
+)
 
-router = APIRouter(prefix="/api/history", tags=["Chat History"])
+router = APIRouter()
 
-class MessageSaveRequest(BaseModel):
-    session_id: str
+class SaveHistoryRequest(BaseModel):
+    session_id: Optional[str] = None
     module: str
-    role: str
-    content: str
+    user_message: str
+    ai_response: str
 
 @router.post("/save")
-async def save_message(req: MessageSaveRequest):
+async def save_history(request: SaveHistoryRequest):
     try:
-        save_chat_message(req.session_id, req.module, req.role, req.content)
-        # Log analytics event only for new user requests to keep request counts accurate
-        if req.role == "user":
-            log_analytics_event("ai_request", req.module)
-        return {"status": "success", "message": "Message saved successfully"}
+        session_id = save_chat_interaction(
+            session_id=request.session_id,
+            module=request.module,
+            user_message=request.user_message,
+            ai_response=request.ai_response
+        )
+        return {
+            "session_id": session_id,
+            "status": "saved"
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error saving history: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save chat history")
 
 @router.get("/sessions")
-async def list_sessions(module: Optional[str] = None):
+async def list_sessions():
     try:
-        sessions = get_sessions(module)
+        sessions = get_sessions()
         return {"sessions": sessions}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error getting sessions: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch history sessions")
 
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: str):
     try:
         messages = get_session_messages(session_id)
-        return {"session_id": session_id, "messages": messages}
+        return {
+            "session_id": session_id,
+            "messages": messages
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error getting session: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch session messages")
 
 @router.delete("/sessions/{session_id}")
-async def remove_session(session_id: str):
+async def delete_history_session(session_id: str):
     try:
         delete_session(session_id)
-        return {"status": "success", "message": f"Session {session_id} deleted successfully"}
+        return {"status": "deleted"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error deleting session: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete session")

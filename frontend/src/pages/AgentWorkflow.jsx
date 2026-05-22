@@ -4,6 +4,7 @@ import { runAgentWorkflow } from '../services/api'
 import AgentStepCard from '../components/AgentStepCard'
 import { Network, Loader, Copy, Briefcase, GraduationCap, Microscope, Code } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ExportButtons from '../components/ExportButtons'
 
 export default function AgentWorkflow() {
   const [task, setTask] = useState('')
@@ -164,13 +165,19 @@ export default function AgentWorkflow() {
                   </h2>
                   <p className="text-sm text-slate-500 mt-1">Edited and polished by the final review process.</p>
                 </div>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Copy className="h-4 w-4" />
-                  <span className="hidden md:inline">Copy Result</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <ExportButtons 
+                    title="Agentic AI Workflow Report" 
+                    content={`Task: ${task}\nMode: ${mode}\n\n[1] Planner Output:\n${result.planner_output}\n\n[2] Research Output:\n${result.research_output}\n\n[3] Writer Output:\n${result.writer_output}\n\n[4] Critic Output:\n${result.critic_output}\n\nFINAL ANSWER:\n${result.final_answer}`} 
+                  />
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Copy className="h-4 w-4" />
+                    <span className="hidden md:inline">Copy Result</span>
+                  </button>
+                </div>
               </div>
               
               <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-slate-700 dark:text-slate-200 whitespace-pre-wrap">

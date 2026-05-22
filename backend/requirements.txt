@@ -11,3 +11,4 @@ python-docx
 scikit-learn
 numpy
 requests
+reportlab

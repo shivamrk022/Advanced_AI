@@ -17,9 +17,12 @@ def init_db():
     # 1. Chat Sessions Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS chat_sessions (
-            session_id TEXT PRIMARY KEY,
-            module TEXT NOT NULL,
-            created_at TEXT NOT NULL
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT UNIQUE NOT NULL,
+            title TEXT,
+            module TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
         )
     """)
     
@@ -30,7 +33,8 @@ def init_db():
             session_id TEXT NOT NULL,
             role TEXT NOT NULL,
             content TEXT NOT NULL,
-            timestamp TEXT NOT NULL,
+            module TEXT,
+            created_at TEXT NOT NULL,
             FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id) ON DELETE CASCADE
         )
     """)
