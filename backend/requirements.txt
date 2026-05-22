@@ -8,3 +8,6 @@ chromadb
 sentence-transformers
 PyMuPDF
 python-docx
+scikit-learn
+numpy
+requests

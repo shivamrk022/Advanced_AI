@@ -95,4 +95,54 @@ export async function deleteRagDocument(documentId) {
   }
 }
 
+/** Analyze resume against job description */
+export async function analyzeResume(file, jobDescription) {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('job_description', jobDescription)
+    const res = await api.post('/resume/analyze', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 180000, // 3 mins for API
+    })
+    return res.data
+  } catch (error) {
+    console.error('Resume Analysis Error:', error)
+    const serverMsg = error.response?.data?.detail
+    if (serverMsg) throw new Error(serverMsg)
+    throw new Error('Failed to analyze resume.')
+  }
+}
+
+/** Run Agentic AI Workflow */
+export async function runAgentWorkflow(task, mode) {
+  try {
+    const res = await api.post('/agents/run', { task, mode }, {
+      timeout: 300000, // 5 mins since it calls LLM 4 times
+    })
+    return res.data
+  } catch (error) {
+    console.error('Agent Workflow Error:', error)
+    const serverMsg = error.response?.data?.detail
+    if (serverMsg) throw new Error(serverMsg)
+    throw new Error('Failed to run agent workflow.')
+  }
+}
+
+/** Search Live Jobs */
+export async function searchJobs(keyword, location, limit = 20) {
+  try {
+    const res = await api.get('/jobs/search', {
+      params: { keyword, location, limit },
+      timeout: 30000, // 30s timeout for external APIs
+    })
+    return res.data
+  } catch (error) {
+    console.error('Job Search Error:', error)
+    const serverMsg = error.response?.data?.detail
+    if (serverMsg) throw new Error(serverMsg)
+    throw new Error('Failed to search jobs.')
+  }
+}
+
 export default api

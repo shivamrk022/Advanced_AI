@@ -8,6 +8,9 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
 from routes.rag import router as rag_router
+from routes.resume import router as resume_router
+from routes.agents import router as agents_router
+from routes.jobs import router as jobs_router
 
 # Load environment variables from parent workspace folder or current folder
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -32,6 +35,9 @@ app.add_middleware(
 
 # Include RAG Document Chat routes
 app.include_router(rag_router)
+app.include_router(resume_router, prefix="/api/resume", tags=["Resume"])
+app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
+app.include_router(jobs_router, prefix="/api/jobs", tags=["Jobs"])
 
 # Initialize Groq client securely using only GROQ_API_KEY
 groq_key = os.getenv("GROQ_API_KEY")
@@ -160,3 +166,9 @@ def health_check():
         **rag_status,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
+
+@app.get("/api/debug/routes")
+def get_routes():
+    routes = [{"path": route.path, "name": route.name} for route in app.routes]
+    return {"routes": routes}
+

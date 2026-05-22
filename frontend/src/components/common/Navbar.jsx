@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { MODULES } from '../../data/modules'
 import { translations } from '../../data/translations'
-import { Sun, Moon, Menu, X, ChevronDown, FileSearch } from 'lucide-react'
+import { Sun, Moon, Menu, X, ChevronDown, FileSearch, FileText, Network, Search } from 'lucide-react'
 import Logo from './Logo'
 
 export default function Navbar({ lang, setLang }) {
@@ -76,7 +76,7 @@ export default function Navbar({ lang, setLang }) {
                       return (
                         <Link
                           key={m.id}
-                          to={m.id === 'chat' ? '/chat' : `/module/${m.id}`}
+                          to={m.id === 'chat' ? '/chat' : m.id === 'jobs' ? '/job-search' : `/module/${m.id}`}
                           className="flex items-center gap-3 rounded-xl p-2.5 text-sm transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
                         >
                           <span className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr ${m.color} text-white`}>
@@ -110,6 +110,36 @@ export default function Navbar({ lang, setLang }) {
             >
               <FileSearch className="h-4 w-4" />
               Doc Chat
+            </Link>
+
+            <Link 
+              to="/resume-analyzer" 
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/resume-analyzer' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              ATS Resume
+            </Link>
+
+            <Link 
+              to="/agent-workflow" 
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/agent-workflow' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              <Network className="h-4 w-4" />
+              Agent Workflow
+            </Link>
+
+            <Link 
+              to="/job-search" 
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/job-search' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              <Search className="h-4 w-4" />
+              Job Search
             </Link>
           </div>
 
@@ -173,6 +203,18 @@ export default function Navbar({ lang, setLang }) {
             <FileSearch className="h-4 w-4" />
             Document Chat
           </Link>
+          <Link to="/resume-analyzer" className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            <FileText className="h-4 w-4" />
+            ATS Resume
+          </Link>
+          <Link to="/agent-workflow" className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            <Network className="h-4 w-4" />
+            Agent Workflow
+          </Link>
+          <Link to="/job-search" className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            <Search className="h-4 w-4" />
+            Job Search
+          </Link>
 
           <div className="border-t border-black/10 dark:border-white/10 pt-3">
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">{t.modules}</div>
@@ -182,7 +224,7 @@ export default function Navbar({ lang, setLang }) {
                 return (
                   <Link
                     key={m.id}
-                    to={m.id === 'chat' ? '/chat' : `/module/${m.id}`}
+                    to={m.id === 'chat' ? '/chat' : m.id === 'jobs' ? '/job-search' : `/module/${m.id}`}
                     className="flex items-center gap-3 rounded-xl px-4 py-2 text-sm transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     <span className={`flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr ${m.color} text-white`}>
