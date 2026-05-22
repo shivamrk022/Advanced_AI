@@ -12,6 +12,7 @@ import ResumeAnalyzer from './pages/ResumeAnalyzer'
 import AgentWorkflow from './pages/AgentWorkflow'
 import JobSearch from './pages/JobSearch'
 import Dashboard from './pages/Dashboard'
+import AdminAnalytics from './pages/AdminAnalytics'
 
 export default function App() {
   const [lang, setLang] = useState('en')
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="/agent-workflow" element={<AgentWorkflow />} />
                 <Route path="/job-search" element={<JobSearch />} />
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
               </Routes>
             </main>
           </div>

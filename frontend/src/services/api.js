@@ -1,9 +1,11 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-const API_BASE = `${API_BASE_URL}/api`;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+const API_BASE_URL = BACKEND_URL.endsWith("/api")
+  ? BACKEND_URL
+  : `${BACKEND_URL}/api`;
 
-const api = axios.create({ baseURL: API_BASE, timeout: 90000 })
+const api = axios.create({ baseURL: API_BASE_URL, timeout: 90000 })
 
 // Route AI queries through the backend FastAPI proxy
 export async function askGroq(systemPrompt, userMessage, history = []) {
@@ -29,7 +31,7 @@ export async function askGroq(systemPrompt, userMessage, history = []) {
     }
 
     // Generic connection failure
-    throw new Error('Could not reach the AI backend.')
+    throw new Error('Backend is not reachable. Please check API URL or Render service.')
   }
 }
 
@@ -51,7 +53,7 @@ export async function uploadRagDocument(file) {
     console.error('RAG Upload Error:', error)
     const serverMsg = error.response?.data?.detail
     if (serverMsg) throw new Error(serverMsg)
-    throw new Error('Failed to upload document.')
+    throw new Error('Upload failed. Please try a smaller PDF/TXT/DOCX file.')
   }
 }
 
@@ -67,7 +69,7 @@ export async function askRagQuestion(documentId, question) {
     console.error('RAG Ask Error:', error)
     const serverMsg = error.response?.data?.detail
     if (serverMsg) throw new Error(serverMsg)
-    throw new Error('Failed to get answer from document.')
+    throw new Error('AI service failed. Please check Groq API key.')
   }
 }
 
@@ -110,7 +112,7 @@ export async function analyzeResume(file, jobDescription) {
     console.error('Resume Analysis Error:', error)
     const serverMsg = error.response?.data?.detail
     if (serverMsg) throw new Error(serverMsg)
-    throw new Error('Failed to analyze resume.')
+    throw new Error('AI service failed. Please check Groq API key.')
   }
 }
 
@@ -125,7 +127,7 @@ export async function runAgentWorkflow(task, mode) {
     console.error('Agent Workflow Error:', error)
     const serverMsg = error.response?.data?.detail
     if (serverMsg) throw new Error(serverMsg)
-    throw new Error('Failed to run agent workflow.')
+    throw new Error('AI service failed. Please check Groq API key.')
   }
 }
 
@@ -141,7 +143,7 @@ export async function searchJobs(keyword, location, limit = 20) {
     console.error('Job Search Error:', error)
     const serverMsg = error.response?.data?.detail
     if (serverMsg) throw new Error(serverMsg)
-    throw new Error('Failed to search jobs.')
+    throw new Error('No jobs found. Try another keyword or location.')
   }
 }
 
@@ -247,11 +249,13 @@ export async function exportDocx(title, content) {
 
 export async function getAnalyticsSummary() {
   try {
+    // Note: Ad blockers may block requests to /analytics. 
+    // If you see Network Errors here, pause your ad blocker for localhost.
     const res = await api.get('/analytics/summary')
     return res.data
   } catch (error) {
     console.error('Analytics summary error:', error)
-    return null
+    throw new Error(error.response?.data?.detail || error.message || 'Network Error')
   }
 }
 
@@ -262,6 +266,16 @@ export async function getAnalyticsEvents() {
   } catch (error) {
     console.error('Analytics events error:', error)
     return { events: [] }
+  }
+}
+
+export async function getDashboardSummary() {
+  try {
+    const res = await api.get('/dashboard/summary')
+    return res.data
+  } catch (error) {
+    console.error('Dashboard summary error:', error)
+    throw new Error(error.response?.data?.detail || error.message || 'Network Error')
   }
 }
 

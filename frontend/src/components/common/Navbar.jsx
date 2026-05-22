@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { MODULES } from '../../data/modules'
 import { translations } from '../../data/translations'
-import { Sun, Moon, Menu, X, ChevronDown, FileText, Network, Search } from 'lucide-react'
+import { Sun, Moon, Menu, X, ChevronDown, FileText, Network, Search, Shield } from 'lucide-react'
 import Logo from './Logo'
 
 export default function Navbar({ lang, setLang }) {

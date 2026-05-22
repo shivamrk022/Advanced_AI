@@ -9,6 +9,17 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def check_db_status() -> str:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.close()
+        conn.close()
+        return "connected"
+    except Exception as e:
+        return f"unhealthy: {str(e)}"
+
 def init_db():
     """Create all required tables for history and analytics if they do not exist."""
     conn = get_db_connection()

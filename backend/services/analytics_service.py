@@ -1,5 +1,4 @@
-from database import get_db_connection
-from main import check_db_status
+from database import get_db_connection, check_db_status
 
 def get_analytics_summary() -> dict:
     """Returns aggregated analytics data for the dashboard."""

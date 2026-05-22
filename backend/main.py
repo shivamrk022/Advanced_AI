@@ -14,7 +14,7 @@ from routes.jobs import router as jobs_router
 from routes.history import router as history_router
 from routes.export import router as export_router
 from routes.analytics import router as analytics_router
-from database import init_db, track_event
+from database import init_db, track_event, check_db_status
 
 # Load environment variables from parent workspace folder or current folder
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -44,10 +44,16 @@ app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 app.include_router(jobs_router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(history_router, prefix="/api/history", tags=["History"])
 app.include_router(export_router, prefix="/api/export", tags=["Export"])
+app.include_router(analytics_router, prefix="/api/metrics", tags=["Metrics"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
+
+from routes.dashboard import router as dashboard_router
+app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 
 @app.on_event("startup")
 async def startup_event():
+    os.makedirs(os.path.join(os.path.dirname(__file__), "storage", "uploads"), exist_ok=True)
+    os.makedirs(os.path.join(os.path.dirname(__file__), "storage", "vector_db"), exist_ok=True)
     init_db()
 
 # Initialize Groq client securely using only GROQ_API_KEY
@@ -69,28 +75,7 @@ class AskRequest(BaseModel):
     history: List[ChatMessage] = []
     temperature: Optional[float] = 0.4
 
-def check_db_status() -> str:
-    db_url = os.getenv("DATABASE_URL", "sqlite:///./shivam_nexus.db")
-    try:
-        if "sqlite" in db_url:
-            # Extract local path from sqlite URL
-            db_path = db_url
-            for prefix in ["sqlite:///", "sqlite://"]:
-                if db_path.startswith(prefix):
-                    db_path = db_path[len(prefix):]
-                    break
-            # Try to connect and verify connection
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            cursor.close()
-            conn.close()
-            return "connected"
-        else:
-            # Fallback/assume connected for non-sqlite mock checks
-            return "connected"
-    except Exception as e:
-        return f"unhealthy: {str(e)}"
+
 
 @app.get("/")
 def root():
