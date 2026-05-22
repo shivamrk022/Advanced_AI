@@ -52,24 +52,26 @@ The architecture uses a **secure decoupled design**:
 
 ---
 
-## 🚀 AI Modules (8 Workspaces)
+## 🚀 AI Modules (9 Workspaces)
 
 | # | Module | Description |
 |---|--------|-------------|
 | 🎓 | **Student Hub** | Study planner, quiz generator, ELI5 concept explainer |
 | 💼 | **AI Career & CV** | ATS resume builder, cover letter optimizer, email templates |
 | 🩺 | **Health Assistant** | Symptom checker, medication guide, wellness routines (with safety disclaimers) |
-| ⚖️ | **Legal Advisor** | Indian law explainer, rights guide, legal draft generation |
+| ⚖ | **Legal Advisor** | Indian law explainer, rights guide, legal draft generation |
 | 🔍 | **Live Job Search** | Job query simulation with city and role filters |
 | 💻 | **Portfolio Builder** | Instant Markdown portfolio generator from your details |
 | 📊 | **Business Intelligence** | Startup planner, competitor analysis, marketing content |
 | 💬 | **General AI Chat** | Full-page conversational workspace with chat history |
+| 📁 | **RAG Document Chat** | Upload PDF/TXT/DOCX, parse text, chunk, index to local ChromaDB, and query with AI |
 
 ---
 
 ## 🎨 Key Features
 
-- ✅ **8 specialized AI modules** with custom system prompts
+- ✅ **9 specialized AI modules** with custom system prompts
+- ✅ **RAG Document Q&A** — Ask questions from uploaded PDF/TXT/DOCX documents locally
 - ✅ **Dark / Light mode** with glassmorphic UI design
 - ✅ **English & Hindi** dual localization
 - ✅ **Secure backend proxy** — API key never exposed in browser
@@ -84,8 +86,8 @@ The architecture uses a **secure decoupled design**:
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | React 18, Vite, Tailwind CSS, Lucide Icons, Axios |
-| **Backend** | FastAPI, Python 3.10+, Uvicorn |
-| **AI Model** | LLaMA 3.3 70B via Groq API |
+| **Backend** | FastAPI, Python 3.10+, Uvicorn, ChromaDB, SentenceTransformers (`all-MiniLM-L6-v2`), PyMuPDF, python-docx |
+| **AI Model** | LLaMA 3.3 70B via Groq API (with offline chunk summary fallback) |
 | **Frontend Hosting** | Vercel |
 | **Backend Hosting** | Render (Free Tier) |
 | **Languages** | English + Hindi |
@@ -98,7 +100,12 @@ The architecture uses a **secure decoupled design**:
 Advanced_AI/
 │
 ├── backend/
-│   ├── main.py               # FastAPI server — /api/ask, /api/health, root
+│   ├── routes/
+│   │   └── rag.py            # RAG endpoints (upload, ask, list, delete)
+│   ├── services/
+│   │   ├── document_service.py # PyMuPDF/python-docx parsers & chunkers
+│   │   └── rag_service.py    # Embeddings generator & ChromaDB manager
+│   ├── main.py               # FastAPI server startup & general chat
 │   ├── requirements.txt      # Python dependencies
 │   ├── Procfile              # Render deployment start command
 │   └── .env.example          # Backend env variables template
@@ -106,8 +113,8 @@ Advanced_AI/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/       # Navbar, Footer, ChatBot, Logo
-│   │   ├── pages/            # Home, ModulePage, ChatPage
-│   │   ├── data/             # modules.js, translations.js, profile.js
+│   │   ├── pages/            # Home, ModulePage, ChatPage, DocumentChat
+│   │   ├── data/             # modules.js, translations.js
 │   │   ├── services/         # api.js (Axios client → Render backend)
 │   │   └── context/          # ThemeContext (dark/light)
 │   ├── public/
@@ -118,7 +125,7 @@ Advanced_AI/
 │
 ├── render.yaml               # Render deployment config
 ├── .env.example              # Root environment variables template
-├── .gitignore                # Excludes .env, node_modules, __pycache__
+├── .gitignore                # Excludes .env, node_modules, __pycache__, DBs
 ├── run_all.bat               # Windows one-click launcher (local dev)
 └── README.md
 ```
@@ -195,7 +202,16 @@ Health and info ping.
 
 ### `GET /api/health`
 ```json
-{ "status": "ok", "groq_configured": true, "model": "llama-3.3-70b-versatile" }
+{
+  "status": "healthy",
+  "backend": "healthy",
+  "database": "healthy",
+  "ai_provider": "healthy",
+  "rag": "available",
+  "vector_db": "connected",
+  "indexed_documents": 0,
+  "timestamp": "2026-05-22T19:17:44.277676Z"
+}
 ```
 
 ### `POST /api/ask`
@@ -213,6 +229,48 @@ Health and info ping.
 }
 ```
 
+### `POST /api/rag/upload`
+Upload PDF/TXT/DOCX for semantic chunking and index creation.
+```json
+// Response
+{
+  "document_id": "unique_id",
+  "filename": "document.pdf",
+  "file_type": "pdf",
+  "chunks": 25,
+  "status": "indexed",
+  "message": "Document uploaded and indexed successfully"
+}
+```
+
+### `POST /api/rag/ask`
+Ask questions against a specific document using local ChromaDB contexts and Groq LLaMA 3.3.
+```json
+// Request
+{
+  "document_id": "unique_id",
+  "question": "What is the passcode?"
+}
+
+// Response
+{
+  "answer": "The passcode is...",
+  "document_id": "unique_id",
+  "sources": [
+    {
+      "chunk_id": "chunk_0",
+      "text_preview": "The passcode is..."
+    }
+  ]
+}
+```
+
+### `GET /api/rag/documents`
+Lists all uploaded and indexed documents.
+
+### `DELETE /api/rag/documents/{id}`
+Deletes vector collection, local upload file, and metadata index.
+
 ---
 
 ## 🔧 Troubleshooting
@@ -223,6 +281,7 @@ Health and info ping.
 | `localhost:5173` not loading | Port in use by another process | Try `http://localhost:5174` or close other Node servers |
 | `run_all.bat` not recognized in PowerShell | PowerShell requires `.\` prefix | Type `.\run_all.bat` |
 | `503 AI service not configured` | `GROQ_API_KEY` missing on Render | Add key in Render → Environment Variables |
+| Slow first file upload | Embedding model loading | The backend takes 5-10 seconds to load the sentence transformer model into memory during the first upload. Subsequent queries/uploads are fast. |
 
 ---
 
