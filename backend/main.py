@@ -13,7 +13,8 @@ from routes.agents import router as agents_router
 from routes.jobs import router as jobs_router
 from routes.history import router as history_router
 from routes.export import router as export_router
-from database import init_db
+from routes.analytics import router as analytics_router
+from database import init_db, track_event
 
 # Load environment variables from parent workspace folder or current folder
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -43,6 +44,7 @@ app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 app.include_router(jobs_router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(history_router, prefix="/api/history", tags=["History"])
 app.include_router(export_router, prefix="/api/export", tags=["Export"])
+app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -134,9 +136,9 @@ async def ask_groq(req: AskRequest):
             )
         except Exception as groq_err:
             if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
-                print("Rate limit hit on 70b model. Falling back to llama3-8b-8192.")
+                print("Rate limit hit on 70b model. Falling back to llama-3.1-8b-instant.")
                 completion = client.chat.completions.create(
-                    model="llama3-8b-8192",
+                    model="llama-3.1-8b-instant",
                     messages=messages,
                     temperature=req.temperature if req.temperature is not None else 0.4,
                     max_tokens=2048,
@@ -144,6 +146,12 @@ async def ask_groq(req: AskRequest):
             else:
                 raise groq_err
                 
+        # Call analytics track_event in a background task so it doesn't block
+        try:
+            track_event("chat_request", "chat", {"model": "llama-3.3-70b-versatile"})
+        except:
+            pass
+            
         return {"response": completion.choices[0].message.content}
     except Exception as e:
         raise HTTPException(
@@ -159,7 +167,7 @@ def health_check():
         groq_key = os.getenv("GROQ_API_KEY")
         if groq_key and groq_key.strip():
             try:
-                client = Groq(api_key=groq_key.strip())
+                client = Groq(api_key=groq_key.strip(), max_retries=0, timeout=15.0)
             except Exception:
                 client = None
 
@@ -185,6 +193,7 @@ def health_check():
         "backend": "healthy",
         "database": db_status,
         "ai_provider": ai_status,
+        "analytics": "available",
         **rag_status,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }

@@ -73,9 +73,9 @@ def analyze_resume(resume_text: str, job_description: str) -> dict:
                 )
             except Exception as groq_err:
                 if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
-                    print("Rate limit hit on 70b model. Falling back to llama3-8b-8192 in resume analyzer.")
+                    print("Rate limit hit on 70b model. Falling back to llama-3.1-8b-instant in resume analyzer.")
                     completion = client.chat.completions.create(
-                        model="llama3-8b-8192",
+                        model="llama-3.1-8b-instant",
                         messages=[{"role": "system", "content": prompt}],
                         temperature=0.1,
                         response_format={"type": "json_object"}

@@ -23,6 +23,10 @@ async def analyze_resume_endpoint(
             raise HTTPException(status_code=400, detail="Could not extract text from the uploaded file")
         
         analysis = analyze_resume(resume_text, job_description)
+        
+        from database import track_event
+        track_event("resume_analysis", "resume", {"filename": file.filename})
+        
         return analysis
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

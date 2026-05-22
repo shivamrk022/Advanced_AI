@@ -25,6 +25,10 @@ async def save_history(request: SaveHistoryRequest):
             user_message=request.user_message,
             ai_response=request.ai_response
         )
+        
+        from database import track_event
+        track_event("history_save", "history", {"session_id": session_id, "module": request.module})
+        
         return {
             "session_id": session_id,
             "status": "saved"

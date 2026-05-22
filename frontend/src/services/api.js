@@ -241,4 +241,28 @@ export async function exportDocx(title, content) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Analytics API functions
+// ---------------------------------------------------------------------------
+
+export async function getAnalyticsSummary() {
+  try {
+    const res = await api.get('/analytics/summary')
+    return res.data
+  } catch (error) {
+    console.error('Analytics summary error:', error)
+    return null
+  }
+}
+
+export async function getAnalyticsEvents() {
+  try {
+    const res = await api.get('/analytics/events')
+    return res.data
+  } catch (error) {
+    console.error('Analytics events error:', error)
+    return { events: [] }
+  }
+}
+
 export default api

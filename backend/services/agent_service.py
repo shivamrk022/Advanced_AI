@@ -6,7 +6,7 @@ def _call_groq(prompt: str, system: str = "You are a helpful AI assistant.", tem
     if not groq_key or not groq_key.strip():
         raise ValueError("GROQ_API_KEY is not set or empty")
     
-    client = Groq(api_key=groq_key.strip())
+    client = Groq(api_key=groq_key.strip(), max_retries=0, timeout=15.0)
     
     try:
         completion = client.chat.completions.create(
@@ -20,9 +20,9 @@ def _call_groq(prompt: str, system: str = "You are a helpful AI assistant.", tem
         )
     except Exception as groq_err:
         if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
-            print("Rate limit hit on 70b model. Falling back to llama3-8b-8192.")
+            print("Rate limit hit on 70b model. Falling back to llama-3.1-8b-instant.")
             completion = client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": prompt}

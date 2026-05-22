@@ -121,6 +121,15 @@ export default function Navbar({ lang, setLang }) {
               <Network className="h-4 w-4" />
               Agent Workflow
             </Link>
+
+            <Link 
+              to="/dashboard" 
+              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/dashboard' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              Dashboard
+            </Link>
           </div>
 
           {/* Controls */}
@@ -186,6 +195,9 @@ export default function Navbar({ lang, setLang }) {
           <Link to="/agent-workflow" className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
             <Network className="h-4 w-4" />
             Agent Workflow
+          </Link>
+          <Link to="/dashboard" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            Dashboard
           </Link>
 
           <div className="border-t border-black/10 dark:border-white/10 pt-3">

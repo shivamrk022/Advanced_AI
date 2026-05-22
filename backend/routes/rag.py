@@ -16,6 +16,7 @@ from services.rag_service import (
     get_document_meta,
     delete_document,
 )
+from database import track_event
 
 router = APIRouter(prefix="/api/rag", tags=["RAG Document Chat"])
 
@@ -85,6 +86,8 @@ async def upload_document(file: UploadFile = File(...)):
         # Index into vector DB
         meta = index_document(file.filename, ext, chunks)
 
+        track_event("rag_upload", "rag", {"filename": file.filename, "file_type": ext, "chunks": meta["chunks"]})
+
         return {
             "document_id": meta["document_id"],
             "filename": meta["filename"],
@@ -152,9 +155,9 @@ async def ask_document(req: AskRagRequest):
                 )
             except Exception as groq_err:
                 if "429" in str(groq_err) or "rate_limit" in str(groq_err).lower():
-                    print("Rate limit hit on 70b model. Falling back to llama3-8b-8192 in RAG.")
+                    print("Rate limit hit on 70b model. Falling back to llama-3.1-8b-instant in RAG.")
                     completion = client.chat.completions.create(
-                        model="llama3-8b-8192",
+                        model="llama-3.1-8b-instant",
                         messages=[
                             {"role": "system", "content": "You are a helpful document analysis assistant. Answer only from the provided context."},
                             {"role": "user", "content": rag_prompt},
@@ -176,6 +179,8 @@ async def ask_document(req: AskRagRequest):
         {"chunk_id": s["chunk_id"], "text_preview": s["text_preview"]}
         for s in sources
     ]
+
+    track_event("rag_question", "rag", {"document_id": req.document_id})
 
     return {
         "answer": answer,

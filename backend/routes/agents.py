@@ -9,7 +9,7 @@ class AgentRequest(BaseModel):
     mode: str
 
 @router.post("/run")
-async def run_agent_workflow(request: AgentRequest):
+def run_agent_workflow(request: AgentRequest):
     if not request.task or not request.task.strip():
         raise HTTPException(status_code=400, detail="Task cannot be empty")
     
@@ -19,6 +19,10 @@ async def run_agent_workflow(request: AgentRequest):
     
     try:
         result = run_agents(request.task.strip(), request.mode)
+        
+        from database import track_event
+        track_event("agent_run", "agents", {"mode": request.mode})
+        
         return result
     except Exception as e:
         # We handle Groq errors inside the service with fallbacks, 

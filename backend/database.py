@@ -40,28 +40,40 @@ def init_db():
     """)
     
     # 3. Analytics Events Table
+    # Drop and recreate to match new schema if needed (since it's a dev database, it's safer to just drop and recreate if we change columns)
+    try:
+        cursor.execute("PRAGMA table_info(analytics_events)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if "module" not in columns:
+            cursor.execute("DROP TABLE analytics_events")
+    except Exception:
+        pass
+        
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS analytics_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_type TEXT NOT NULL,
+            module TEXT,
             metadata TEXT,
-            timestamp TEXT NOT NULL
+            created_at TEXT NOT NULL
         )
     """)
     
     conn.commit()
     conn.close()
 
-def log_analytics_event(event_type: str, metadata: str = None):
-    """Log an event for the analytics dashboard."""
+import json
+def track_event(event_type: str, module: str = None, metadata: dict = None):
+    """Log an event for the analytics dashboard. Fails silently to prevent crashing."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        meta_str = json.dumps(metadata) if metadata else None
         cursor.execute(
-            "INSERT INTO analytics_events (event_type, metadata, timestamp) VALUES (?, ?, ?)",
-            (event_type, metadata, datetime.utcnow().isoformat() + "Z")
+            "INSERT INTO analytics_events (event_type, module, metadata, created_at) VALUES (?, ?, ?, ?)",
+            (event_type, module, meta_str, datetime.utcnow().isoformat() + "Z")
         )
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Error logging analytics: {e}")
+        print(f"Error logging analytics event '{event_type}': {e}")

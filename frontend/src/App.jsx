@@ -11,6 +11,7 @@ import ChatPage from './pages/ChatPage'
 import ResumeAnalyzer from './pages/ResumeAnalyzer'
 import AgentWorkflow from './pages/AgentWorkflow'
 import JobSearch from './pages/JobSearch'
+import Dashboard from './pages/Dashboard'
 
 export default function App() {
   const [lang, setLang] = useState('en')
@@ -42,6 +43,7 @@ export default function App() {
                 <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
                 <Route path="/agent-workflow" element={<AgentWorkflow />} />
                 <Route path="/job-search" element={<JobSearch />} />
+                <Route path="/dashboard" element={<Dashboard />} />
               </Routes>
             </main>
           </div>

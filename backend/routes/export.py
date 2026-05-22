@@ -29,6 +29,9 @@ async def export_pdf(req: ExportRequest):
         safe_title = "".join(c for c in req.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
         filename = f"{safe_title}.pdf" if safe_title else "report.pdf"
         
+        from database import track_event
+        track_event("export_pdf", "export", {"title": req.title})
+        
         return FileResponse(
             path=file_path, 
             filename=filename, 
@@ -47,6 +50,9 @@ async def export_docx(req: ExportRequest):
         file_path = generate_docx_report(req.title, req.content)
         safe_title = "".join(c for c in req.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
         filename = f"{safe_title}.docx" if safe_title else "report.docx"
+        
+        from database import track_event
+        track_event("export_docx", "export", {"title": req.title})
         
         return FileResponse(
             path=file_path, 
