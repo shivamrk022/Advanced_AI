@@ -13,6 +13,9 @@ import AgentWorkflow from './pages/AgentWorkflow'
 import JobSearch from './pages/JobSearch'
 import Dashboard from './pages/Dashboard'
 import AdminAnalytics from './pages/AdminAnalytics'
+import About from './pages/About'
+import Pricing from './pages/Pricing'
+import Contact from './pages/Contact'
 
 export default function App() {
   const [lang, setLang] = useState('en')
@@ -40,12 +43,17 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Home lang={lang} />} />
                 <Route path="/module/:id" element={<ModulePage lang={lang} />} />
-                <Route path="/chat" element={<ChatPage lang={lang} />} />
+                <Route path="/chat" element={<ChatPage lang={lang} defaultTab="general" />} />
+                <Route path="/history" element={<ChatPage lang={lang} defaultTab="general" />} />
+                <Route path="/document-chat" element={<ChatPage lang={lang} defaultTab="document" />} />
                 <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
                 <Route path="/agent-workflow" element={<AgentWorkflow />} />
                 <Route path="/job-search" element={<JobSearch />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/contact" element={<Contact />} />
               </Routes>
             </main>
           </div>

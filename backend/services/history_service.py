@@ -1,74 +1,98 @@
 import uuid
-from database import get_db_connection
+from sqlalchemy.orm import Session
+from models import ChatSession, ChatMessage
 from datetime import datetime
+import logging
 
-def save_chat_interaction(session_id: str, module: str, user_message: str, ai_response: str) -> str:
+logger = logging.getLogger(__name__)
+
+def save_chat_interaction(db: Session, session_id: str, module: str, user_message: str, ai_response: str) -> str:
     """Save user message and AI response to history, creating session if needed."""
     if not session_id:
         session_id = str(uuid.uuid4())
         
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    now = datetime.utcnow().isoformat() + "Z"
-    
     # Check if session exists
-    cursor.execute("SELECT 1 FROM chat_sessions WHERE session_id = ?", (session_id,))
-    if not cursor.fetchone():
+    session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+    
+    if not session:
         # Title is up to first 50 chars of user message
         title = user_message[:50] + "..." if len(user_message) > 50 else user_message
-        cursor.execute(
-            "INSERT INTO chat_sessions (session_id, title, module, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-            (session_id, title, module, now, now)
+        session = ChatSession(
+            session_id=session_id,
+            title=title,
+            module=module
         )
+        db.add(session)
     else:
-        cursor.execute("UPDATE chat_sessions SET updated_at = ? WHERE session_id = ?", (now, session_id))
-    
+        session.updated_at = datetime.utcnow()
+        
     # Insert user message
     if user_message:
-        cursor.execute(
-            "INSERT INTO chat_messages (session_id, role, content, module, created_at) VALUES (?, ?, ?, ?, ?)",
-            (session_id, "user", user_message, module, now)
+        msg1 = ChatMessage(
+            session_id=session_id,
+            role="user",
+            content=user_message,
+            module=module
         )
+        db.add(msg1)
         
     # Insert AI message
     if ai_response:
-        cursor.execute(
-            "INSERT INTO chat_messages (session_id, role, content, module, created_at) VALUES (?, ?, ?, ?, ?)",
-            (session_id, "assistant", ai_response, module, now)
+        msg2 = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=ai_response,
+            module=module
         )
+        db.add(msg2)
         
-    conn.commit()
-    conn.close()
-    
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.exception("Failed to save chat interaction")
+        raise e
+        
     return session_id
 
-def get_sessions() -> list[dict]:
+def get_sessions(db: Session) -> list[dict]:
     """Retrieve all chat sessions."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT session_id, title, module, created_at, updated_at FROM chat_sessions ORDER BY updated_at DESC")
-    rows = cursor.fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    sessions = db.query(ChatSession).order_by(ChatSession.updated_at.desc()).all()
+    return [
+        {
+            "session_id": s.session_id,
+            "title": s.title,
+            "module": s.module,
+            "created_at": s.created_at.isoformat() + "Z",
+            "updated_at": s.updated_at.isoformat() + "Z"
+        } for s in sessions
+    ]
 
-def get_session_messages(session_id: str) -> list[dict]:
+def get_session_messages(db: Session, session_id: str) -> list[dict]:
     """Retrieve all messages for a specific session."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT role, content, created_at FROM chat_messages WHERE session_id = ? ORDER BY id ASC", (session_id,))
-    rows = cursor.fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    messages = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(ChatMessage.id.asc()).all()
+    return [
+        {
+            "role": m.role,
+            "content": m.content,
+            "created_at": m.created_at.isoformat() + "Z"
+        } for m in messages
+    ]
 
-def delete_session(session_id: str) -> bool:
+def delete_session(db: Session, session_id: str) -> bool:
     """Delete a chat session and all its messages."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM chat_sessions WHERE session_id = ?", (session_id,))
-    # chat_messages will be deleted by CASCADE if foreign key pragmas are on, 
-    # but let's do it explicitly to be safe as well
-    cursor.execute("DELETE FROM chat_messages WHERE session_id = ?", (session_id,))
-    conn.commit()
-    conn.close()
-    return True
+    session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+    if session:
+        db.delete(session)
+        
+    messages = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).all()
+    for msg in messages:
+        db.delete(msg)
+        
+    try:
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        logger.exception("Failed to delete session")
+        raise e

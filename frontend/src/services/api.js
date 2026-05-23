@@ -1,16 +1,16 @@
 import axios from 'axios'
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-const API_BASE_URL = BACKEND_URL.endsWith("/api")
-  ? BACKEND_URL
-  : `${BACKEND_URL}/api`;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? "" : "http://localhost:8000");
+const API_BASE_URL = BACKEND_URL.replace(/\/+$/, '').endsWith("/api")
+  ? BACKEND_URL.replace(/\/+$/, '')
+  : `${BACKEND_URL.replace(/\/+$/, '')}/api`;
 
 const api = axios.create({ baseURL: API_BASE_URL, timeout: 90000 })
 
 // Route AI queries through the backend FastAPI proxy
 export async function askGroq(systemPrompt, userMessage, history = []) {
   try {
-    const res = await api.post('/ask', {
+    const res = await api.post('/chat', {
       system_prompt: systemPrompt,
       user_message: userMessage,
       history: history.map(h => ({ role: h.role, content: h.content }))
@@ -31,7 +31,9 @@ export async function askGroq(systemPrompt, userMessage, history = []) {
     }
 
     // Generic connection failure
-    throw new Error('Backend is not reachable. Please check API URL or Render service.')
+    const requestedUrl = error.config?.baseURL ? `${error.config.baseURL}${error.config.url}` : error.config?.url;
+    const status = error.response?.status || 'N/A';
+    throw new Error(`Backend is not reachable. API URL: ${requestedUrl} | Status: ${status} | Error: ${error.message}`);
   }
 }
 
@@ -87,7 +89,10 @@ export async function getRagDocuments() {
 /** Delete an indexed document */
 export async function deleteRagDocument(documentId) {
   try {
-    const res = await api.delete(`/rag/documents/${documentId}`)
+    const adminKey = localStorage.getItem('adminKey') || '';
+    const res = await api.delete(`/rag/documents/${documentId}`, {
+      headers: { 'X-Admin-Key': adminKey }
+    })
     return res.data
   } catch (error) {
     console.error('RAG Delete Error:', error)
@@ -193,7 +198,10 @@ export async function getHistorySession(sessionId) {
 /** Delete a specific chat session */
 export async function deleteHistorySession(sessionId) {
   try {
-    const res = await api.delete(`/history/sessions/${sessionId}`)
+    const adminKey = localStorage.getItem('adminKey') || '';
+    const res = await api.delete(`/history/sessions/${sessionId}`, {
+      headers: { 'X-Admin-Key': adminKey }
+    })
     return res.data
   } catch (error) {
     console.error('Delete History Session Error:', error)
@@ -249,9 +257,12 @@ export async function exportDocx(title, content) {
 
 export async function getAnalyticsSummary() {
   try {
+    const adminKey = localStorage.getItem('adminKey') || '';
     // Note: Ad blockers may block requests to /analytics. 
     // If you see Network Errors here, pause your ad blocker for localhost.
-    const res = await api.get('/analytics/summary')
+    const res = await api.get('/analytics/summary', {
+      headers: { 'X-Admin-Key': adminKey }
+    })
     return res.data
   } catch (error) {
     console.error('Analytics summary error:', error)
@@ -261,7 +272,10 @@ export async function getAnalyticsSummary() {
 
 export async function getAnalyticsEvents() {
   try {
-    const res = await api.get('/analytics/events')
+    const adminKey = localStorage.getItem('adminKey') || '';
+    const res = await api.get('/analytics/events', {
+      headers: { 'X-Admin-Key': adminKey }
+    })
     return res.data
   } catch (error) {
     console.error('Analytics events error:', error)

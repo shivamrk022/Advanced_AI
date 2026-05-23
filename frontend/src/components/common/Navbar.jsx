@@ -130,6 +130,32 @@ export default function Navbar({ lang, setLang }) {
             >
               Dashboard
             </Link>
+            <Link 
+              to="/about" 
+              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/about' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              About
+            </Link>
+
+            <Link 
+              to="/pricing" 
+              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/pricing' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              Pricing
+            </Link>
+
+            <Link 
+              to="/contact" 
+              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
+                location.pathname === '/contact' ? 'text-brand-500 font-semibold' : ''
+              }`}
+            >
+              Contact
+            </Link>
           </div>
 
           {/* Controls */}
@@ -198,6 +224,15 @@ export default function Navbar({ lang, setLang }) {
           </Link>
           <Link to="/dashboard" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
             Dashboard
+          </Link>
+          <Link to="/about" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            About
+          </Link>
+          <Link to="/pricing" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            Pricing
+          </Link>
+          <Link to="/contact" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
+            Contact
           </Link>
 
           <div className="border-t border-black/10 dark:border-white/10 pt-3">

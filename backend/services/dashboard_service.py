@@ -1,14 +1,13 @@
 import os
-from database import get_db_connection, check_db_status
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from models import AnalyticsEvent, ChatSession, RagDocument
 
-def get_dashboard_summary() -> dict:
+def get_dashboard_summary(db: Session) -> dict:
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
         # Get event counts
-        cursor.execute("SELECT event_type, COUNT(*) FROM analytics_events GROUP BY event_type")
-        event_counts = dict(cursor.fetchall())
+        counts = db.query(AnalyticsEvent.event_type, func.count(AnalyticsEvent.id)).group_by(AnalyticsEvent.event_type).all()
+        event_counts = {row[0]: row[1] for row in counts}
         
         summary_stats = {
             "chat_sessions": event_counts.get("chat_request", 0) + event_counts.get("history_save", 0),
@@ -20,34 +19,50 @@ def get_dashboard_summary() -> dict:
         }
         
         # Get recent activities (limit 5)
-        cursor.execute("SELECT event_type, module, created_at FROM analytics_events ORDER BY id DESC LIMIT 5")
-        recent_activities = [dict(row) for row in cursor.fetchall()]
+        recent_records = db.query(AnalyticsEvent).order_by(AnalyticsEvent.id.desc()).limit(5).all()
+        recent_activities = []
         
         # Process simple activity names
-        for act in recent_activities:
-            et = act["event_type"]
-            if et == "chat_request": act["action_text"] = "You asked AI a question"
-            elif et == "rag_upload": act["action_text"] = "You uploaded a document"
-            elif et == "rag_question": act["action_text"] = "You asked a document question"
-            elif et == "resume_analysis": act["action_text"] = "You analyzed a resume"
-            elif et == "agent_run": act["action_text"] = "You ran an agent workflow"
-            elif et == "job_search": act["action_text"] = "You searched jobs"
-            elif et in ["export_pdf", "export_docx"]: act["action_text"] = "You exported a report"
-            elif et == "history_save": act["action_text"] = "You saved a chat session"
-            else: act["action_text"] = f"You used {act['module'] or 'a feature'}"
+        for act in recent_records:
+            et = act.event_type
+            if et == "chat_request": action_text = "You asked AI a question"
+            elif et == "rag_upload": action_text = "You uploaded a document"
+            elif et == "rag_question": action_text = "You asked a document question"
+            elif et == "resume_analysis": action_text = "You analyzed a resume"
+            elif et == "agent_run": action_text = "You ran an agent workflow"
+            elif et == "job_search": action_text = "You searched jobs"
+            elif et in ["export_pdf", "export_docx"]: action_text = "You exported a report"
+            elif et == "history_save": action_text = "You saved a chat session"
+            else: action_text = f"You used {act.module or 'a feature'}"
+            
+            recent_activities.append({
+                "event_type": et,
+                "module": act.module,
+                "created_at": act.created_at.isoformat() + "Z",
+                "action_text": action_text
+            })
         
         # Get recent chat sessions
-        cursor.execute("SELECT session_id, module, created_at FROM chat_sessions ORDER BY id DESC LIMIT 3")
-        recent_chats = [dict(row) for row in cursor.fetchall()]
+        chat_records = db.query(ChatSession).order_by(ChatSession.id.desc()).limit(3).all()
+        recent_chats = [
+            {
+                "session_id": c.session_id,
+                "module": c.module,
+                "created_at": c.created_at.isoformat() + "Z"
+            } for c in chat_records
+        ]
         
-        # Get recent documents (mocked from events since we might not have a direct docs table easy to query here)
-        # Or we can query metadata if needed. Let's just keep it empty if no dedicated table, or use rag_service.
-        try:
-            from services.rag_service import get_all_documents
-            docs = get_all_documents()
-            recent_documents = docs[:3] if docs else []
-        except Exception:
-            recent_documents = []
+        # Get recent documents
+        doc_records = db.query(RagDocument).order_by(RagDocument.id.desc()).limit(3).all()
+        recent_documents = [
+            {
+                "document_id": d.document_id,
+                "filename": d.filename,
+                "file_type": d.file_type,
+                "chunks": d.chunk_count,
+                "uploaded_at": d.uploaded_at.isoformat() + "Z"
+            } for d in doc_records
+        ]
 
         # Generate recommendations
         recommendations = []
@@ -65,7 +80,6 @@ def get_dashboard_summary() -> dict:
 
         groq_key = os.getenv("GROQ_API_KEY")
 
-        conn.close()
         return {
             "summary": summary_stats,
             "recent_chats": recent_chats,
@@ -74,11 +88,13 @@ def get_dashboard_summary() -> dict:
             "recommendations": recommendations,
             "system_health": {
                 "backend": "online",
-                "database": check_db_status(),
+                "database": "connected",
                 "groq": "configured" if groq_key else "missing"
             }
         }
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("Dashboard service failed")
         return {
             "summary": {
                 "chat_sessions": 0, "documents_uploaded": 0, "resume_analyses": 0,

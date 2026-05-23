@@ -2,8 +2,11 @@
 RAG routes — document upload, question-answering, list, and delete endpoints.
 """
 import os
-import shutil
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from sqlalchemy.orm import Session
+from database import get_db
+import uuid
+import pathlib
 from pydantic import BaseModel
 
 from services.document_service import extract_text, clean_text, chunk_text
@@ -16,7 +19,8 @@ from services.rag_service import (
     get_document_meta,
     delete_document,
 )
-from database import track_event
+from services.analytics_service import track_event
+from security import verify_admin_key
 
 router = APIRouter(prefix="/api/rag", tags=["RAG Document Chat"])
 
@@ -42,7 +46,7 @@ class AskRagRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """Upload a document, extract text, create embeddings, and index it."""
     # Validate extension
     if not file.filename:
@@ -64,14 +68,23 @@ async def upload_document(file: UploadFile = File(...)):
             detail=f"File too large ({size_mb:.1f} MB). Maximum is {MAX_FILE_SIZE_MB} MB."
         )
 
-    # Save to uploads directory
-    file_path = os.path.join(UPLOADS_DIR, file.filename)
-    with open(file_path, "wb") as f:
+    # Save to uploads directory using secure server-generated filename
+    doc_id = uuid.uuid4().hex[:12]
+    safe_filename = f"{doc_id}.{ext}"
+    
+    target_path = pathlib.Path(UPLOADS_DIR) / safe_filename
+    resolved_path = target_path.resolve()
+    upload_root = pathlib.Path(UPLOADS_DIR).resolve()
+    
+    if upload_root not in resolved_path.parents and resolved_path != upload_root:
+        raise HTTPException(status_code=400, detail="Invalid file path")
+        
+    with open(resolved_path, "wb") as f:
         f.write(content)
 
     try:
         # Extract and clean text
-        raw_text = extract_text(file_path, ext)
+        raw_text = extract_text(str(resolved_path), ext)
         cleaned = clean_text(raw_text)
 
         if not cleaned or len(cleaned.split()) < 10:
@@ -84,7 +97,7 @@ async def upload_document(file: UploadFile = File(...)):
         chunks = chunk_text(cleaned, chunk_size=500, overlap=50)
 
         # Index into vector DB
-        meta = index_document(file.filename, ext, chunks)
+        meta = index_document(db, doc_id, file.filename, ext, chunks)
 
         track_event("rag_upload", "rag", {"filename": file.filename, "file_type": ext, "chunks": meta["chunks"]})
 
@@ -101,9 +114,11 @@ async def upload_document(file: UploadFile = File(...)):
         raise
     except Exception as e:
         # Clean up on failure
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
+        if resolved_path.exists():
+            resolved_path.unlink()
+        import logging
+        logging.getLogger(__name__).exception("Failed to process document")
+        raise HTTPException(status_code=500, detail="Failed to process document. Please try again.")
 
 
 # ---------------------------------------------------------------------------
@@ -111,13 +126,13 @@ async def upload_document(file: UploadFile = File(...)):
 # ---------------------------------------------------------------------------
 
 @router.post("/ask")
-async def ask_document(req: AskRagRequest):
+async def ask_document(req: AskRagRequest, db: Session = Depends(get_db)):
     """Answer a question using RAG over a previously uploaded document."""
     if not req.document_id or not req.question.strip():
         raise HTTPException(status_code=400, detail="document_id and question are required.")
 
     # Verify document exists
-    meta = get_document_meta(req.document_id)
+    meta = get_document_meta(db, req.document_id)
     if not meta:
         raise HTTPException(status_code=404, detail=f"Document '{req.document_id}' not found.")
 
@@ -194,9 +209,9 @@ async def ask_document(req: AskRagRequest):
 # ---------------------------------------------------------------------------
 
 @router.get("/documents")
-async def list_documents():
+async def list_documents(db: Session = Depends(get_db)):
     """Return metadata for all indexed documents."""
-    docs = get_all_documents()
+    docs = get_all_documents(db)
     return {"documents": docs}
 
 
@@ -204,19 +219,25 @@ async def list_documents():
 # Delete document endpoint
 # ---------------------------------------------------------------------------
 
-@router.delete("/documents/{document_id}")
-async def remove_document(document_id: str):
+@router.delete("/documents/{document_id}", dependencies=[Depends(verify_admin_key)])
+async def remove_document(document_id: str, db: Session = Depends(get_db)):
     """Delete a document's vectors, metadata, and uploaded file."""
-    meta = get_document_meta(document_id)
+    meta = get_document_meta(db, document_id)
     if not meta:
         raise HTTPException(status_code=404, detail=f"Document '{document_id}' not found.")
 
     # Remove from vector DB and metadata
-    delete_document(document_id)
+    delete_document(db, document_id)
 
-    # Remove uploaded file if it exists
-    file_path = os.path.join(UPLOADS_DIR, meta.get("filename", ""))
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    # Remove uploaded file securely
+    ext = meta.get("file_type", "pdf")
+    safe_filename = f"{document_id}.{ext}"
+    target_path = pathlib.Path(UPLOADS_DIR) / safe_filename
+    resolved_path = target_path.resolve()
+    upload_root = pathlib.Path(UPLOADS_DIR).resolve()
+    
+    if upload_root in resolved_path.parents or resolved_path == upload_root:
+        if resolved_path.exists():
+            resolved_path.unlink()
 
     return {"message": f"Document '{document_id}' deleted successfully.", "document_id": document_id}

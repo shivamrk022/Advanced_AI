@@ -101,7 +101,7 @@ export default function Dashboard() {
           <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Start AI Chat</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">Ask questions or brainstorm ideas</p>
         </Link>
-        <Link to="/module/doc-chat" className="group p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-brand-500 dark:hover:border-brand-500 transition-all shadow-sm hover:shadow-md">
+        <Link to="/document-chat" className="group p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-brand-500 dark:hover:border-brand-500 transition-all shadow-sm hover:shadow-md">
           <Upload className="h-8 w-8 text-purple-500 mb-4 group-hover:scale-110 transition-transform" />
           <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Upload Document</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">Chat with your PDFs</p>
@@ -215,7 +215,7 @@ export default function Dashboard() {
               ))}
               
               {data.recent_documents?.map((doc, idx) => (
-                <Link key={`doc-${idx}`} to="/module/doc-chat" className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group shadow-sm hover:shadow-md">
+                <Link key={`doc-${idx}`} to="/document-chat" className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group shadow-sm hover:shadow-md">
                   <div className="flex items-center gap-4">
                     <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-500">
                       <FileText className="h-5 w-5" />

@@ -1,33 +1,65 @@
-from database import get_db_connection, check_db_status
+from sqlalchemy.orm import Session
+from sqlalchemy import func, desc
+from models import AnalyticsEvent
+from database import SessionLocal
+import json
+import logging
 
-def get_analytics_summary() -> dict:
+logger = logging.getLogger(__name__)
+
+def track_event(event_type: str, module: str = None, metadata: dict = None):
+    """Log an event for the analytics dashboard. Fails silently to prevent crashing."""
+    try:
+        db = SessionLocal()
+        meta_str = json.dumps(metadata) if metadata else None
+        event = AnalyticsEvent(
+            event_type=event_type,
+            module=module,
+            metadata_json=meta_str
+        )
+        db.add(event)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Error logging analytics event '{event_type}': {e}")
+    finally:
+        try:
+            db.close()
+        except:
+            pass
+
+def get_analytics_summary(db: Session) -> dict:
     """Returns aggregated analytics data for the dashboard."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
         # Total events
-        cursor.execute("SELECT COUNT(*) FROM analytics_events")
-        total_events = cursor.fetchone()[0] or 0
+        total_events = db.query(AnalyticsEvent).count()
         
         # Event type counts
-        cursor.execute("SELECT event_type, COUNT(*) FROM analytics_events GROUP BY event_type")
-        event_counts = dict(cursor.fetchall())
+        counts = db.query(
+            AnalyticsEvent.event_type, 
+            func.count(AnalyticsEvent.id)
+        ).group_by(AnalyticsEvent.event_type).all()
+        event_counts = {row[0]: row[1] for row in counts}
         
         # Most used module
-        cursor.execute("SELECT module, COUNT(*) as count FROM analytics_events WHERE module IS NOT NULL GROUP BY module ORDER BY count DESC LIMIT 1")
-        most_used_row = cursor.fetchone()
-        most_used_module = most_used_row["module"] if most_used_row else "none"
+        most_used = db.query(
+            AnalyticsEvent.module, 
+            func.count(AnalyticsEvent.id).label('count')
+        ).filter(AnalyticsEvent.module.isnot(None)).group_by(AnalyticsEvent.module).order_by(desc('count')).first()
+        most_used_module = most_used[0] if most_used else "none"
         
-        # Recent events (up to 5 for summary)
-        cursor.execute("SELECT event_type, module, created_at FROM analytics_events ORDER BY id DESC LIMIT 5")
-        recent_events = [dict(row) for row in cursor.fetchall()]
-        
-        conn.close()
+        # Recent events
+        recent_records = db.query(AnalyticsEvent).order_by(AnalyticsEvent.id.desc()).limit(5).all()
+        recent_events = [
+            {
+                "event_type": r.event_type,
+                "module": r.module,
+                "created_at": r.created_at.isoformat() + "Z"
+            } for r in recent_records
+        ]
         
         return {
             "backend_status": "ok",
-            "database_status": check_db_status(),
+            "database_status": "connected",
             "total_events": total_events,
             "total_ai_requests": event_counts.get("chat_request", 0),
             "rag_uploads": event_counts.get("rag_upload", 0),
@@ -41,6 +73,7 @@ def get_analytics_summary() -> dict:
             "recent_events": recent_events
         }
     except Exception as e:
+        logger.exception("Failed to get analytics summary")
         return {
             "backend_status": "error",
             "database_status": "error",
@@ -58,14 +91,20 @@ def get_analytics_summary() -> dict:
             "recent_events": []
         }
 
-def get_recent_events(limit: int = 50) -> dict:
+def get_recent_events(db: Session, limit: int = 50) -> dict:
     """Returns recent analytics events."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, event_type, module, metadata, created_at FROM analytics_events ORDER BY id DESC LIMIT ?", (limit,))
-        events = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-        return {"events": events}
+        events = db.query(AnalyticsEvent).order_by(AnalyticsEvent.id.desc()).limit(limit).all()
+        result = [
+            {
+                "id": r.id,
+                "event_type": r.event_type,
+                "module": r.module,
+                "metadata": r.metadata_json,
+                "created_at": r.created_at.isoformat() + "Z"
+            } for r in events
+        ]
+        return {"events": result}
     except Exception as e:
+        logger.exception("Failed to get recent events")
         return {"events": [], "error": str(e)}

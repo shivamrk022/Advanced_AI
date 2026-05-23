@@ -9,9 +9,9 @@ import ReactMarkdown from 'react-markdown'
 import toast from 'react-hot-toast'
 import ExportButtons from '../components/ExportButtons'
 
-export default function ChatPage({ lang }) {
+export default function ChatPage({ lang, defaultTab = 'general' }) {
   // Mode selection: 'general' or 'document'
-  const [activeTab, setActiveTab] = useState('general')
+  const [activeTab, setActiveTab] = useState(defaultTab)
 
   // ---------- General Chat State ----------
   const getDefaultMessage = () => ({

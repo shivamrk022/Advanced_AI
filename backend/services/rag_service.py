@@ -2,20 +2,17 @@
 RAG service — manages embeddings, ChromaDB vector store, and LLM-based Q&A.
 """
 import os
-import uuid
-import json
 import chromadb
-from datetime import datetime
 from sentence_transformers import SentenceTransformer
+from sqlalchemy.orm import Session
+from models import RagDocument
 
 # Paths — resolved relative to the backend directory
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VECTOR_DB_DIR = os.path.join(BACKEND_DIR, "storage", "vector_db")
-METADATA_FILE = os.path.join(BACKEND_DIR, "storage", "rag_metadata.json")
 
 # Ensure storage directories exist
 os.makedirs(VECTOR_DB_DIR, exist_ok=True)
-os.makedirs(os.path.dirname(METADATA_FILE), exist_ok=True)
 
 # Initialize embedding model (loaded once, reused)
 _embedding_model = None
@@ -37,26 +34,11 @@ def get_chroma_client() -> chromadb.ClientAPI:
     return _chroma_client
 
 # ---------------------------------------------------------------------------
-# Metadata helpers (JSON-file based — lightweight, no extra DB dependency)
-# ---------------------------------------------------------------------------
-
-def _load_metadata() -> dict:
-    if os.path.exists(METADATA_FILE):
-        with open(METADATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-def _save_metadata(data: dict):
-    with open(METADATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-# ---------------------------------------------------------------------------
 # Core RAG operations
 # ---------------------------------------------------------------------------
 
-def index_document(filename: str, file_type: str, chunks: list[str]) -> dict:
-    """Create embeddings for chunks and store them in ChromaDB."""
-    doc_id = uuid.uuid4().hex[:12]
+def index_document(db: Session, doc_id: str, filename: str, file_type: str, chunks: list[str]) -> dict:
+    """Create embeddings for chunks and store them in ChromaDB and Postgres."""
     model = get_embedding_model()
     client = get_chroma_client()
 
@@ -77,18 +59,25 @@ def index_document(filename: str, file_type: str, chunks: list[str]) -> dict:
         metadatas=[{"chunk_index": i} for i in range(len(chunks))],
     )
 
-    # Save metadata
-    metadata = _load_metadata()
-    metadata[doc_id] = {
-        "document_id": doc_id,
-        "filename": filename,
-        "file_type": file_type,
-        "chunks": len(chunks),
-        "uploaded_at": datetime.utcnow().isoformat() + "Z",
-    }
-    _save_metadata(metadata)
+    # Save metadata to DB
+    doc = RagDocument(
+        document_id=doc_id,
+        filename=filename,
+        stored_filename=f"{doc_id}.{file_type}",
+        file_type=file_type,
+        chunk_count=len(chunks)
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
 
-    return metadata[doc_id]
+    return {
+        "document_id": doc.document_id,
+        "filename": doc.filename,
+        "file_type": doc.file_type,
+        "chunks": doc.chunk_count,
+        "uploaded_at": doc.uploaded_at.isoformat() + "Z"
+    }
 
 
 def retrieve_chunks(doc_id: str, question: str, top_k: int = 5) -> list[dict]:
@@ -146,19 +135,35 @@ def generate_fallback_answer(question: str, sources: list[dict]) -> str:
     return f"**Fallback answer** (AI model unavailable — showing relevant document excerpts):\n\n{context_preview}"
 
 
-def get_all_documents() -> list[dict]:
+def get_all_documents(db: Session) -> list[dict]:
     """Return metadata for all indexed documents."""
-    metadata = _load_metadata()
-    return list(metadata.values())
+    docs = db.query(RagDocument).order_by(RagDocument.uploaded_at.desc()).all()
+    return [
+        {
+            "document_id": d.document_id,
+            "filename": d.filename,
+            "file_type": d.file_type,
+            "chunks": d.chunk_count,
+            "uploaded_at": d.uploaded_at.isoformat() + "Z"
+        } for d in docs
+    ]
 
 
-def get_document_meta(doc_id: str) -> dict | None:
+def get_document_meta(db: Session, doc_id: str) -> dict | None:
     """Return metadata for a single document."""
-    metadata = _load_metadata()
-    return metadata.get(doc_id)
+    d = db.query(RagDocument).filter(RagDocument.document_id == doc_id).first()
+    if d:
+        return {
+            "document_id": d.document_id,
+            "filename": d.filename,
+            "file_type": d.file_type,
+            "chunks": d.chunk_count,
+            "uploaded_at": d.uploaded_at.isoformat() + "Z"
+        }
+    return None
 
 
-def delete_document(doc_id: str) -> bool:
+def delete_document(db: Session, doc_id: str) -> bool:
     """Delete a document's vectors and metadata."""
     client = get_chroma_client()
 
@@ -169,10 +174,10 @@ def delete_document(doc_id: str) -> bool:
         pass  # collection may not exist
 
     # Remove from metadata
-    metadata = _load_metadata()
-    if doc_id in metadata:
-        del metadata[doc_id]
-        _save_metadata(metadata)
+    d = db.query(RagDocument).filter(RagDocument.document_id == doc_id).first()
+    if d:
+        db.delete(d)
+        db.commit()
         return True
     return False
 

@@ -25,7 +25,8 @@ A full-stack AI productivity platform built with React, FastAPI, Groq LLaMA, RAG
 **Backend:**
 - FastAPI (Python)
 - Groq API (LLaMA)
-- SQLite
+- PostgreSQL (Production) & SQLite (Local)
+- SQLAlchemy ORM
 - ChromaDB & sentence-transformers (RAG)
 - PyMuPDF, python-docx, reportlab
 
@@ -86,7 +87,8 @@ Open `http://localhost:5173` in your browser.
 |---------|----------|--------|
 | Health | `/api/health` | GET |
 | Routes | `/api/debug/routes` | GET |
-| Chat | `/api/chat/ask` | POST |
+| Chat | `/api/chat` | POST |
+| Chat (legacy) | `/api/ask` | POST |
 | RAG | `/api/rag/upload` | POST |
 | RAG | `/api/rag/ask` | POST |
 | Resume | `/api/resume/analyze` | POST |
@@ -98,6 +100,27 @@ Open `http://localhost:5173` in your browser.
 | History | `/api/history/sessions` | GET |
 | Export | `/api/export/pdf` | POST |
 
+## PostgreSQL Database Setup (Production)
+
+To use PostgreSQL in production, set the `DATABASE_URL` environment variable. If not set, the app defaults to a local SQLite database (`shivam_nexus.db`).
+
+**Option A: Neon PostgreSQL**
+1. Create a Neon project.
+2. Copy the pooled connection string.
+3. Add it to backend `.env` as `DATABASE_URL` (and in Render env variables).
+
+**Option B: Supabase PostgreSQL**
+1. Create a Supabase project.
+2. Copy the Postgres connection string.
+3. Add `DATABASE_URL` to backend `.env` and Render env.
+
+**Option C: Render PostgreSQL**
+1. Create a Render Postgres database.
+2. Copy the External Database URL.
+3. Add `DATABASE_URL` to Render backend env.
+
+*⚠️ Important: Never commit your real `DATABASE_URL` to GitHub.*
+
 ## Deployment Guide
 
 ### Backend (Render)
@@ -106,7 +129,9 @@ Open `http://localhost:5173` in your browser.
 3. Root Directory: `backend`
 4. Build Command: `pip install -r requirements.txt`
 5. Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-6. Add your `GROQ_API_KEY` to Render Environment Variables.
+6. Add the following to your Render Environment Variables:
+   - `GROQ_API_KEY=your_key`
+   - `CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://advanced-ai-eta.vercel.app`
 
 *Note on Render Free Tier:* Uploaded documents and SQLite databases may be reset upon container restarts. For persistent production, consider connecting to a hosted PostgreSQL/Supabase database and AWS S3 for storage.
 
@@ -114,7 +139,9 @@ Open `http://localhost:5173` in your browser.
 1. In Vercel, import your repository.
 2. Root Directory: `frontend`
 3. Framework Preset: Vite
-4. Add Environment Variable: `VITE_BACKEND_URL=https://your-render-app.onrender.com`
+4. Add Environment Variable:
+   - `VITE_BACKEND_URL=https://advanced-ai-1gz7.onrender.com`
+   *(Important: Do not put `/api` at the end of `VITE_BACKEND_URL`)*
 5. Deploy.
 
 ## Resume Project Bullets

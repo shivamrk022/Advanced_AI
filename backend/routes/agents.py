@@ -20,7 +20,7 @@ def run_agent_workflow(request: AgentRequest):
     try:
         result = run_agents(request.task.strip(), request.mode)
         
-        from database import track_event
+        from services.analytics_service import track_event
         track_event("agent_run", "agents", {"mode": request.mode})
         
         return result

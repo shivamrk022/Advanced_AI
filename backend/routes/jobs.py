@@ -11,9 +11,11 @@ async def search_jobs_endpoint(
     limit: int = Query(20, description="Max number of jobs to return")
 ):
     try:
-        from database import track_event
+        from services.analytics_service import track_event
         track_event("job_search", "jobs", {"keyword": keyword, "location": location})
         
         return search_all_jobs(keyword, location, limit)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Job search failed: {str(e)}")
+        import logging
+        logging.getLogger(__name__).exception("Job search failed")
+        raise HTTPException(status_code=500, detail="Job search failed. Please try again.")

@@ -2,7 +2,7 @@ import os
 import sqlite3
 from datetime import datetime
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -14,7 +14,10 @@ from routes.jobs import router as jobs_router
 from routes.history import router as history_router
 from routes.export import router as export_router
 from routes.analytics import router as analytics_router
-from database import init_db, track_event, check_db_status
+from services.analytics_service import track_event
+from database import init_db, get_db
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 # Load environment variables from parent workspace folder or current folder
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -23,7 +26,7 @@ load_dotenv()
 app = FastAPI(title="Shivam Nexus API", version="1.0.0")
 
 # Setup CORS Origins dynamically from environment
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000")
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,https://advanced-ai-eta.vercel.app")
 if cors_origins_env:
     origins = [orig.strip() for orig in cors_origins_env.split(",") if orig.strip()]
 else:
@@ -44,7 +47,6 @@ app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 app.include_router(jobs_router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(history_router, prefix="/api/history", tags=["History"])
 app.include_router(export_router, prefix="/api/export", tags=["Export"])
-app.include_router(analytics_router, prefix="/api/metrics", tags=["Metrics"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
 from routes.dashboard import router as dashboard_router
@@ -85,6 +87,7 @@ def root():
         "health": "/api/health"
     }
 
+@app.post("/api/chat")
 @app.post("/api/ask")
 async def ask_groq(req: AskRequest):
     global client
@@ -139,13 +142,15 @@ async def ask_groq(req: AskRequest):
             
         return {"response": completion.choices[0].message.content}
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("AI request failed")
         raise HTTPException(
             status_code=500,
-            detail=f"AI request failed: {str(e)}"
+            detail="Something went wrong. Please try again."
         )
 
 @app.get("/api/health")
-def health_check():
+def health_check(db: Session = Depends(get_db)):
     global client
     # Re-initialize client if key was added in env after startup
     if not client:
@@ -156,7 +161,14 @@ def health_check():
             except Exception:
                 client = None
 
-    db_status = check_db_status()
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+        
+    db_type = "postgresql" if "postgres" in str(db.get_bind().url) else "sqlite"
+    
     ai_status = "healthy" if client is not None else "unconfigured: GROQ_API_KEY is missing"
     
     # RAG subsystem status
@@ -167,24 +179,29 @@ def health_check():
         rag_status = {"rag": "unavailable", "vector_db": "not loaded"}
 
     # Define overall status based on backend and database health
-    overall_status = "healthy"
+    overall_status = "ok"
     if db_status != "connected":
-        overall_status = "unhealthy"
-    elif client is None:
-        overall_status = "degraded"
+        overall_status = "error"
+
+    storage_status = "available" if os.path.exists(os.path.join(os.path.dirname(__file__), "storage")) else "error"
 
     return {
         "status": overall_status,
-        "backend": "healthy",
+        "backend": "running",
         "database": db_status,
-        "ai_provider": ai_status,
-        "analytics": "available",
-        **rag_status,
+        "database_type": db_type,
+        "groq_configured": client is not None,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
-@app.get("/api/debug/routes")
+from security import verify_admin_key
+
+@app.get("/api/debug/routes", dependencies=[Depends(verify_admin_key)])
 def get_routes():
     routes = [{"path": route.path, "name": route.name} for route in app.routes]
     return {"routes": routes}
 
+
+# trigger reload
+
+# trigger reload again

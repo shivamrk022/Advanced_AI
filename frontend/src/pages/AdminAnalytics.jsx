@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { 
   Activity, RefreshCw, Server, Database, MessageSquare, 
   Upload, HelpCircle, FileText, Bot, Search, Download, History,
-  AlertCircle
+  AlertCircle, Key
 } from 'lucide-react'
 import { getAnalyticsSummary } from '../services/api'
 import StatCard from '../components/StatCard'
@@ -11,9 +11,12 @@ import StatCard from '../components/StatCard'
 export default function AdminAnalytics() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [adminKey, setAdminKey] = useState(localStorage.getItem('adminKey') || '')
+  const [showKeyModal, setShowKeyModal] = useState(!localStorage.getItem('adminKey'))
+  const [keyInput, setKeyInput] = useState('')
 
   const fetchData = async () => {
+    if (!adminKey) return;
     setLoading(true)
     setError(null)
     try {
@@ -22,14 +25,52 @@ export default function AdminAnalytics() {
       setData(summary)
     } catch (err) {
       setError(err.message)
+      if (err.message.includes('403') || err.message.includes('Invalid or missing Admin API Key')) {
+        setShowKeyModal(true)
+      }
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (adminKey && !showKeyModal) {
+      fetchData()
+    }
+  }, [adminKey, showKeyModal])
+
+  const handleSaveKey = (e) => {
+    e.preventDefault()
+    if (!keyInput.trim()) return
+    localStorage.setItem('adminKey', keyInput.trim())
+    setAdminKey(keyInput.trim())
+    setShowKeyModal(false)
+  }
+
+  if (showKeyModal) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-32 text-center">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xl">
+          <Key className="h-12 w-12 text-brand-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Admin Access Required</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Please enter your Admin API Key to view analytics.</p>
+          <form onSubmit={handleSaveKey} className="space-y-4">
+            <input 
+              type="password" 
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              placeholder="Enter Admin Key" 
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500"
+              required
+            />
+            <button type="submit" className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-semibold transition-colors">
+              Access Analytics
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
 
   if (loading && !data) {
     return (
