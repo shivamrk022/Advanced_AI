@@ -12,6 +12,5 @@ scikit-learn
 numpy
 requests
 reportlab
-
 sqlalchemy
 psycopg2-binary

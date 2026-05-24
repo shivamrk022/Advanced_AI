@@ -11,6 +11,7 @@ import StatCard from '../components/StatCard'
 export default function AdminAnalytics() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [adminKey, setAdminKey] = useState(localStorage.getItem('adminKey') || '')
   const [showKeyModal, setShowKeyModal] = useState(!localStorage.getItem('adminKey'))
   const [keyInput, setKeyInput] = useState('')
