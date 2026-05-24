@@ -34,6 +34,49 @@ A full-stack AI productivity platform built with React, FastAPI, Groq LLaMA, RAG
 - Frontend: Vercel
 - Backend: Render
 
+## System Architecture
+
+```mermaid
+graph TD
+    subgraph Frontend [Client - React / Vite]
+        UI[User Interface / Pages] --> |Axios Requests| API_Client[API Service - api.js]
+        Theme[Theme Context]
+    end
+
+    subgraph Backend [Server - FastAPI]
+        Gateway[FastAPI App - main.py]
+        Routes[API Routes]
+        Services[Service Orchestrators]
+        DB_ORM[SQLAlchemy ORM]
+        RAG_Engine[RAG Engine]
+        
+        Gateway --> Routes
+        Routes --> Services
+        Services --> DB_ORM
+        Services --> RAG_Engine
+    end
+
+    subgraph Storage [Data Layer]
+        SQLite[(Local SQLite - shivam_nexus.db)]
+        Postgres[(Production PostgreSQL)]
+        Chroma[(Chroma Vector DB)]
+        Uploads[Local Uploads storage/]
+        
+        DB_ORM --> SQLite
+        DB_ORM --> Postgres
+        RAG_Engine --> Chroma
+        RAG_Engine --> Uploads
+    end
+
+    subgraph External [External APIs]
+        Groq[Groq LLaMA 3.3 / 3.1]
+        Jobs[Live Jobs API]
+        
+        Gateway --> |LLM Inference| Groq
+        Services --> |Job Queries| Jobs
+    end
+```
+
 ## Folder Structure
 ```
 .
