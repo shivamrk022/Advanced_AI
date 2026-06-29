@@ -1,72 +1,55 @@
 """
-RAG service — manages embeddings, ChromaDB vector store, and LLM-based Q&A.
+RAG service — Lightweight version for Render free tier (512MB RAM).
+Uses TF-IDF + cosine similarity instead of heavy sentence-transformers + ChromaDB.
+Documents and vectors are stored in PostgreSQL (persistent on Render).
 """
 import os
+import json
+import logging
 from sqlalchemy.orm import Session
+from sqlalchemy import Column, Text
 from models import RagDocument
+
+logger = logging.getLogger(__name__)
 
 # Paths — resolved relative to the backend directory
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VECTOR_DB_DIR = os.path.join(BACKEND_DIR, "storage", "vector_db")
 
-# Ensure storage directories exist
-os.makedirs(VECTOR_DB_DIR, exist_ok=True)
+# ---------------------------------------------------------------------------
+# Lightweight in-memory vector store (backed by PostgreSQL for persistence)
+# ---------------------------------------------------------------------------
 
-# Initialize embedding model (loaded once, reused)
-_embedding_model = None
+def _tfidf_similarity(query: str, documents: list[str]) -> list[float]:
+    """Compute cosine similarity between query and documents using TF-IDF."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
 
-def get_embedding_model():
-    """Lazy-load the embedding model to avoid slow import-time startup."""
-    global _embedding_model
-    if _embedding_model is None:
-        from sentence_transformers import SentenceTransformer
-        _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    return _embedding_model
+    if not documents:
+        return []
 
-# Initialize ChromaDB persistent client
-_chroma_client = None
+    corpus = [query] + documents
+    vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+    tfidf_matrix = vectorizer.fit_transform(corpus)
 
-def get_chroma_client():
-    """Lazy-load the ChromaDB client."""
-    global _chroma_client
-    if _chroma_client is None:
-        import chromadb
-        _chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
-    return _chroma_client
+    # Similarity of query (row 0) against all documents (rows 1+)
+    similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+    return similarities.tolist()
+
 
 # ---------------------------------------------------------------------------
 # Core RAG operations
 # ---------------------------------------------------------------------------
 
 def index_document(db: Session, doc_id: str, filename: str, file_type: str, chunks: list[str]) -> dict:
-    """Create embeddings for chunks and store them in ChromaDB and Postgres."""
-    model = get_embedding_model()
-    client = get_chroma_client()
-
-    # Create or get a collection for this document
-    collection = client.get_or_create_collection(
-        name=f"doc_{doc_id}",
-        metadata={"hnsw:space": "cosine"},
-    )
-
-    # Generate embeddings and add to collection
-    ids = [f"chunk_{i}" for i in range(len(chunks))]
-    embeddings = model.encode(chunks).tolist()
-
-    collection.add(
-        ids=ids,
-        embeddings=embeddings,
-        documents=chunks,
-        metadatas=[{"chunk_index": i} for i in range(len(chunks))],
-    )
-
-    # Save metadata to DB
+    """Store document chunks in PostgreSQL for lightweight RAG."""
+    # Save metadata + chunks as JSON in the database
     doc = RagDocument(
         document_id=doc_id,
         filename=filename,
         stored_filename=f"{doc_id}.{file_type}",
         file_type=file_type,
-        chunk_count=len(chunks)
+        chunk_count=len(chunks),
+        chunks_json=json.dumps(chunks)  # Store chunks directly in DB
     )
     db.add(doc)
     db.commit()
@@ -81,34 +64,44 @@ def index_document(db: Session, doc_id: str, filename: str, file_type: str, chun
     }
 
 
-def retrieve_chunks(doc_id: str, question: str, top_k: int = 5) -> list[dict]:
-    """Retrieve the most relevant chunks for a question."""
-    model = get_embedding_model()
-    client = get_chroma_client()
+def retrieve_chunks(doc_id: str, question: str, top_k: int = 5, db: Session = None) -> list[dict]:
+    """Retrieve the most relevant chunks for a question using TF-IDF similarity."""
+    if db is None:
+        from database import SessionLocal
+        db = SessionLocal()
+        should_close = True
+    else:
+        should_close = False
 
     try:
-        collection = client.get_collection(name=f"doc_{doc_id}")
-    except Exception:
-        raise ValueError(f"Document '{doc_id}' not found in vector database.")
+        doc = db.query(RagDocument).filter(RagDocument.document_id == doc_id).first()
+        if not doc:
+            raise ValueError(f"Document '{doc_id}' not found in database.")
 
-    query_embedding = model.encode([question]).tolist()
+        chunks = json.loads(doc.chunks_json) if doc.chunks_json else []
+        if not chunks:
+            return []
 
-    results = collection.query(
-        query_embeddings=query_embedding,
-        n_results=min(top_k, collection.count()),
-        include=["documents", "distances"],
-    )
+        # Compute TF-IDF similarity
+        similarities = _tfidf_similarity(question, chunks)
 
-    sources = []
-    if results and results["ids"] and results["ids"][0]:
-        for i, chunk_id in enumerate(results["ids"][0]):
-            sources.append({
-                "chunk_id": chunk_id,
-                "text_preview": results["documents"][0][i][:300] + ("..." if len(results["documents"][0][i]) > 300 else ""),
-                "full_text": results["documents"][0][i],
-                "distance": results["distances"][0][i] if results.get("distances") else None,
-            })
-    return sources
+        # Get top-k chunks by similarity
+        indexed_sims = sorted(enumerate(similarities), key=lambda x: x[1], reverse=True)[:top_k]
+
+        sources = []
+        for idx, score in indexed_sims:
+            if score > 0.01:  # Filter out near-zero matches
+                text = chunks[idx]
+                sources.append({
+                    "chunk_id": f"chunk_{idx}",
+                    "text_preview": text[:300] + ("..." if len(text) > 300 else ""),
+                    "full_text": text,
+                    "distance": round(1 - score, 4),  # Convert similarity to distance
+                })
+        return sources
+    finally:
+        if should_close:
+            db.close()
 
 
 def build_rag_prompt(question: str, sources: list[dict]) -> str:
@@ -165,16 +158,7 @@ def get_document_meta(db: Session, doc_id: str) -> dict | None:
 
 
 def delete_document(db: Session, doc_id: str) -> bool:
-    """Delete a document's vectors and metadata."""
-    client = get_chroma_client()
-
-    # Remove collection from ChromaDB
-    try:
-        client.delete_collection(name=f"doc_{doc_id}")
-    except Exception:
-        pass  # collection may not exist
-
-    # Remove from metadata
+    """Delete a document's metadata and stored chunks."""
     d = db.query(RagDocument).filter(RagDocument.document_id == doc_id).first()
     if d:
         db.delete(d)
@@ -186,12 +170,14 @@ def delete_document(db: Session, doc_id: str) -> bool:
 def check_rag_status() -> dict:
     """Return RAG subsystem health info."""
     try:
-        client = get_chroma_client()
-        collections = client.list_collections()
+        from database import SessionLocal
+        db = SessionLocal()
+        count = db.query(RagDocument).count()
+        db.close()
         return {
             "rag": "available",
-            "vector_db": "connected",
-            "indexed_documents": len(collections),
+            "vector_db": "postgresql (lightweight TF-IDF)",
+            "indexed_documents": count,
         }
     except Exception as e:
         return {

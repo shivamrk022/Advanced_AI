@@ -42,4 +42,6 @@ class RagDocument(Base):
     stored_filename = Column(String, nullable=True)
     file_type = Column(String)
     chunk_count = Column(Integer)
+    chunks_json = Column(Text, nullable=True)  # Store document chunks in DB for Render free tier persistence
     uploaded_at = Column(DateTime, default=datetime.utcnow)
+

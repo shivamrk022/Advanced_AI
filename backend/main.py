@@ -1,5 +1,4 @@
 import os
-import sqlite3
 from datetime import datetime
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Depends
@@ -55,7 +54,6 @@ app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"]
 @app.on_event("startup")
 async def startup_event():
     os.makedirs(os.path.join(os.path.dirname(__file__), "storage", "uploads"), exist_ok=True)
-    os.makedirs(os.path.join(os.path.dirname(__file__), "storage", "vector_db"), exist_ok=True)
     init_db()
 
 # Initialize Groq client securely using only GROQ_API_KEY
@@ -200,8 +198,3 @@ from security import verify_admin_key
 def get_routes():
     routes = [{"path": route.path, "name": route.name} for route in app.routes]
     return {"routes": routes}
-
-
-# trigger reload
-
-# trigger reload again

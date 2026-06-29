@@ -138,7 +138,7 @@ async def ask_document(req: AskRagRequest, db: Session = Depends(get_db)):
 
     try:
         # Retrieve relevant chunks
-        sources = retrieve_chunks(req.document_id, req.question.strip(), top_k=5)
+        sources = retrieve_chunks(req.document_id, req.question.strip(), top_k=5, db=db)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
