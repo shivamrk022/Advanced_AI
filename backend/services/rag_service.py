@@ -2,8 +2,6 @@
 RAG service — manages embeddings, ChromaDB vector store, and LLM-based Q&A.
 """
 import os
-import chromadb
-from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
 from models import RagDocument
 
@@ -17,19 +15,22 @@ os.makedirs(VECTOR_DB_DIR, exist_ok=True)
 # Initialize embedding model (loaded once, reused)
 _embedding_model = None
 
-def get_embedding_model() -> SentenceTransformer:
+def get_embedding_model():
     """Lazy-load the embedding model to avoid slow import-time startup."""
     global _embedding_model
     if _embedding_model is None:
+        from sentence_transformers import SentenceTransformer
         _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
     return _embedding_model
 
 # Initialize ChromaDB persistent client
 _chroma_client = None
 
-def get_chroma_client() -> chromadb.ClientAPI:
+def get_chroma_client():
+    """Lazy-load the ChromaDB client."""
     global _chroma_client
     if _chroma_client is None:
+        import chromadb
         _chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
     return _chroma_client
 

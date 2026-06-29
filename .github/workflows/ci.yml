@@ -86,7 +86,16 @@ jobs:
       - name: 📥 Install dependencies
         run: pip install -r requirements.txt
 
-      - name: ✅ Verify imports & syntax
+      - name: ✅ Verify syntax (compile check)
+        run: |
+          python -m py_compile main.py
+          python -m py_compile database.py
+          python -m py_compile models.py
+          python -m py_compile security.py
+          find routes services -name "*.py" -exec python -m py_compile {} +
+          echo "✅ All Python files compile successfully"
+
+      - name: ✅ Verify imports
         run: python -c "
           import main
           import database
