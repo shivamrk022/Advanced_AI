@@ -14,11 +14,11 @@ export default function JobSearch() {
 
   const handleSearch = async (e) => {
     e?.preventDefault()
-    
+
     setLoading(true)
     setError(null)
     setHasSearched(true)
-    
+
     try {
       const data = await searchJobs(keyword, location)
       setResult(data)

@@ -36,7 +36,7 @@ export default function App() {
               },
             }}
           />
-          
+
           <div>
             <Navbar lang={lang} setLang={setLang} />
             <main>

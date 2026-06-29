@@ -1,0 +1,22 @@
+[
+  {
+    "company": "OpenAI",
+    "type": "greenhouse",
+    "token": "openai"
+  },
+  {
+    "company": "Stripe",
+    "type": "greenhouse",
+    "token": "stripe"
+  },
+  {
+    "company": "Figma",
+    "type": "lever",
+    "token": "figma"
+  },
+  {
+    "company": "GitHub",
+    "type": "lever",
+    "token": "github"
+  }
+]

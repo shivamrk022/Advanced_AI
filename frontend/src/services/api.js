@@ -219,7 +219,7 @@ export async function exportPdf(title, content) {
     const url = window.URL.createObjectURL(new Blob([res.data]))
     const link = document.createElement('a')
     link.href = url
-    
+
     // Convert title to safe filename
     const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'report'
     link.setAttribute('download', `${safeTitle}.pdf`)
@@ -238,7 +238,7 @@ export async function exportDocx(title, content) {
     const url = window.URL.createObjectURL(new Blob([res.data]))
     const link = document.createElement('a')
     link.href = url
-    
+
     // Convert title to safe filename
     const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'report'
     link.setAttribute('download', `${safeTitle}.docx`)

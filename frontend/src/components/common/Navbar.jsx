@@ -32,10 +32,9 @@ export default function Navbar({ lang, setLang }) {
   const isRtl = false
 
   return (
-    <nav 
-      className={`sticky top-0 z-50 w-full border-b border-black/10 dark:border-white/10 ${
-        dark ? 'glass-dark text-white' : 'glass-light text-slate-800'
-      }`}
+    <nav
+      className={`sticky top-0 z-50 w-full border-b border-black/10 dark:border-white/10 ${dark ? 'glass-dark text-white' : 'glass-light text-slate-800'
+        }`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -47,14 +46,7 @@ export default function Navbar({ lang, setLang }) {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
-            <Link 
-              to="/" 
-              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/' ? 'text-brand-500 font-semibold' : ''
-              }`}
-            >
-              {t.home}
-            </Link>
+
 
             {/* Modules Dropdown */}
             <div className="relative" ref={dropdownRef}>
@@ -67,9 +59,8 @@ export default function Navbar({ lang, setLang }) {
               </button>
 
               {dropdownOpen && (
-                <div className={`absolute top-full mt-2 w-64 rounded-2xl border border-black/5 dark:border-white/5 bg-white dark:bg-slate-900 p-2 shadow-xl ${
-                  isRtl ? 'left-0' : 'right-0'
-                }`}>
+                <div className={`absolute top-full mt-2 w-64 rounded-2xl border border-black/5 dark:border-white/5 bg-white dark:bg-slate-900 p-2 shadow-xl ${isRtl ? 'left-0' : 'right-0'
+                  }`}>
                   <div className="grid gap-1">
                     {MODULES.map((m) => {
                       const Icon = m.icon
@@ -93,66 +84,47 @@ export default function Navbar({ lang, setLang }) {
               )}
             </div>
 
-            <Link 
-              to="/chat" 
-              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/chat' ? 'text-brand-500 font-semibold' : ''
-              }`}
-            >
-              {t.aiChat}
-            </Link>
 
-            <Link 
-              to="/resume-analyzer" 
-              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/resume-analyzer' ? 'text-brand-500 font-semibold' : ''
-              }`}
+
+            <Link
+              to="/resume-analyzer"
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${location.pathname === '/resume-analyzer' ? 'text-brand-500 font-semibold' : ''
+                }`}
             >
               <FileText className="h-4 w-4" />
               ATS Resume
             </Link>
 
-            <Link 
-              to="/agent-workflow" 
-              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/agent-workflow' ? 'text-brand-500 font-semibold' : ''
-              }`}
+            <Link
+              to="/agent-workflow"
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500 ${location.pathname === '/agent-workflow' ? 'text-brand-500 font-semibold' : ''
+                }`}
             >
               <Network className="h-4 w-4" />
               Agent Workflow
             </Link>
 
-            <Link 
-              to="/dashboard" 
-              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/dashboard' ? 'text-brand-500 font-semibold' : ''
-              }`}
+            <Link
+              to="/dashboard"
+              className={`text-sm font-medium transition-colors hover:text-brand-500 ${location.pathname === '/dashboard' ? 'text-brand-500 font-semibold' : ''
+                }`}
             >
               Dashboard
             </Link>
-            <Link 
-              to="/about" 
-              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/about' ? 'text-brand-500 font-semibold' : ''
-              }`}
-            >
-              About
-            </Link>
 
-            <Link 
-              to="/pricing" 
-              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/pricing' ? 'text-brand-500 font-semibold' : ''
-              }`}
+
+            <Link
+              to="/pricing"
+              className={`text-sm font-medium transition-colors hover:text-brand-500 ${location.pathname === '/pricing' ? 'text-brand-500 font-semibold' : ''
+                }`}
             >
               Pricing
             </Link>
 
-            <Link 
-              to="/contact" 
-              className={`text-sm font-medium transition-colors hover:text-brand-500 ${
-                location.pathname === '/contact' ? 'text-brand-500 font-semibold' : ''
-              }`}
+            <Link
+              to="/contact"
+              className={`text-sm font-medium transition-colors hover:text-brand-500 ${location.pathname === '/contact' ? 'text-brand-500 font-semibold' : ''
+                }`}
             >
               Contact
             </Link>
@@ -166,11 +138,10 @@ export default function Navbar({ lang, setLang }) {
                 <button
                   key={l}
                   onClick={() => setLang(l)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase transition-all ${
-                    lang === l
+                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase transition-all ${lang === l
                       ? 'bg-brand-600 text-white shadow-md'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   {l}
                 </button>
@@ -208,12 +179,7 @@ export default function Navbar({ lang, setLang }) {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden border-t border-black/10 dark:border-white/10 bg-white dark:bg-slate-950 p-4 space-y-3">
-          <Link to="/" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
-            {t.home}
-          </Link>
-          <Link to="/chat" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
-            {t.aiChat}
-          </Link>
+
           <Link to="/resume-analyzer" className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
             <FileText className="h-4 w-4" />
             ATS Resume
@@ -225,9 +191,7 @@ export default function Navbar({ lang, setLang }) {
           <Link to="/dashboard" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
             Dashboard
           </Link>
-          <Link to="/about" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
-            About
-          </Link>
+
           <Link to="/pricing" className="block rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">
             Pricing
           </Link>
@@ -263,9 +227,8 @@ export default function Navbar({ lang, setLang }) {
                 <button
                   key={l}
                   onClick={() => setLang(l)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase transition-all ${
-                    lang === l ? 'bg-brand-600 text-white' : 'text-slate-500'
-                  }`}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase transition-all ${lang === l ? 'bg-brand-600 text-white' : 'text-slate-500'
+                    }`}
                 >
                   {l}
                 </button>
