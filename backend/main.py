@@ -81,6 +81,8 @@ class AskRequest(BaseModel):
 def root():
     return {
         "message": "Shivam Nexus API is running",
+        "version": "1.1.0",
+        "auto_deploy": "working ✅",
         "docs": "/docs",
         "health": "/api/health"
     }
