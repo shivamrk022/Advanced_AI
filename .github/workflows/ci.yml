@@ -83,12 +83,7 @@ jobs:
           echo "✅ All Python files compile successfully"
 
       - name: ✅ Verify imports
-        run: python -c "
-          import main
-          import database
-          import models
-          print('✅ All backend modules import successfully')
-          "
+        run: python -c "import main; import database; import models; print('✅ All backend modules import successfully')"
         env:
           GROQ_API_KEY: test_key_for_ci
           DATABASE_URL: sqlite:///./test.db
