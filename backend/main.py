@@ -11,7 +11,7 @@ from routes.resume import router as resume_router
 from routes.agents import router as agents_router
 from routes.jobs import router as jobs_router
 from routes.history import router as history_router
-from routes.export import router as export_router
+
 from routes.analytics import router as analytics_router
 from services.analytics_service import track_event
 from database import init_db, get_db
@@ -45,7 +45,7 @@ app.include_router(resume_router, prefix="/api/resume", tags=["Resume"])
 app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 app.include_router(jobs_router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(history_router, prefix="/api/history", tags=["History"])
-app.include_router(export_router, prefix="/api/export", tags=["Export"])
+
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
 from routes.dashboard import router as dashboard_router

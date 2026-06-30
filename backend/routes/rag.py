@@ -20,7 +20,6 @@ from services.rag_service import (
     delete_document,
 )
 from services.analytics_service import track_event
-from security import verify_admin_key
 
 router = APIRouter(prefix="/api/rag", tags=["RAG Document Chat"])
 
@@ -219,7 +218,7 @@ async def list_documents(db: Session = Depends(get_db)):
 # Delete document endpoint
 # ---------------------------------------------------------------------------
 
-@router.delete("/documents/{document_id}", dependencies=[Depends(verify_admin_key)])
+@router.delete("/documents/{document_id}")
 async def remove_document(document_id: str, db: Session = Depends(get_db)):
     """Delete a document's vectors, metadata, and uploaded file."""
     meta = get_document_meta(db, document_id)

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { analyzeResume } from '../services/api'
 import { UploadCloud, CheckCircle, XCircle, AlertTriangle, FileText, Copy, Loader } from 'lucide-react'
 import toast from 'react-hot-toast'
-import ExportButtons from '../components/ExportButtons'
+
 
 export default function ResumeAnalyzer() {
   const [file, setFile] = useState(null)
@@ -133,19 +133,13 @@ export default function ResumeAnalyzer() {
               Analysis Results
             </h2>
             {result && (
-              <div className="flex items-center gap-2">
-                <ExportButtons 
-                  title="ATS Resume Analysis Report" 
-                  content={`ATS Match Score: ${result.ats_score}%\n\nSummary:\n${result.summary}\n\nMatched Keywords:\n${result.matched_keywords?.join(', ')}\n\nMissing Keywords:\n${result.missing_keywords?.join(', ')}\n\nWeak Points:\n${result.weak_points?.join('\n')}\n\nSuggested Bullet Improvements:\n${result.improved_bullets?.join('\n')}\n\nAction Plan:\n${result.action_plan?.join('\n')}`} 
-                />
-                <button
+              <button
                   onClick={handleCopy}
                   className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
                   title="Copy JSON result"
                 >
                   <Copy className="h-5 w-5" />
                 </button>
-              </div>
             )}
           </div>
 

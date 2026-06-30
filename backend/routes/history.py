@@ -61,12 +61,11 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
         print(f"Error getting session: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch session messages")
 
-from security import verify_admin_key
 import logging
 
 logger = logging.getLogger(__name__)
 
-@router.delete("/sessions/{session_id}", dependencies=[Depends(verify_admin_key)])
+@router.delete("/sessions/{session_id}")
 async def delete_history_session(session_id: str, db: Session = Depends(get_db)):
     try:
         delete_session(db, session_id)

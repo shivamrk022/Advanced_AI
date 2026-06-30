@@ -7,7 +7,7 @@ import { translations } from '../data/translations'
 import { Send, Trash2, Brain, Bot, User, MessageSquare, Plus, Loader2, Database, FileUp, FileText, CheckCircle2, Sparkles, Copy, MessageCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import toast from 'react-hot-toast'
-import ExportButtons from '../components/ExportButtons'
+
 
 export default function ChatPage({ lang, defaultTab = 'general' }) {
   // Mode selection: 'general' or 'document'
@@ -430,10 +430,6 @@ export default function ChatPage({ lang, defaultTab = 'general' }) {
                         >
                           <Copy className="h-3 w-3" /> Copy
                         </button>
-                        <ExportButtons 
-                          title={activeTab === 'document' ? "Document Chat Report" : "AI Chat Response"} 
-                          content={m.content} 
-                        />
                       </div>
                     )}
                   </div>

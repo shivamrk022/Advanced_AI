@@ -89,10 +89,7 @@ export async function getRagDocuments() {
 /** Delete an indexed document */
 export async function deleteRagDocument(documentId) {
   try {
-    const adminKey = localStorage.getItem('adminKey') || '';
-    const res = await api.delete(`/rag/documents/${documentId}`, {
-      headers: { 'X-Admin-Key': adminKey }
-    })
+    const res = await api.delete(`/rag/documents/${documentId}`)
     return res.data
   } catch (error) {
     console.error('RAG Delete Error:', error)
@@ -198,10 +195,7 @@ export async function getHistorySession(sessionId) {
 /** Delete a specific chat session */
 export async function deleteHistorySession(sessionId) {
   try {
-    const adminKey = localStorage.getItem('adminKey') || '';
-    const res = await api.delete(`/history/sessions/${sessionId}`, {
-      headers: { 'X-Admin-Key': adminKey }
-    })
+    const res = await api.delete(`/history/sessions/${sessionId}`)
     return res.data
   } catch (error) {
     console.error('Delete History Session Error:', error)
@@ -209,47 +203,6 @@ export async function deleteHistorySession(sessionId) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Export API functions
-// ---------------------------------------------------------------------------
-
-export async function exportPdf(title, content) {
-  try {
-    const res = await api.post('/export/pdf', { title, content }, { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([res.data]))
-    const link = document.createElement('a')
-    link.href = url
-
-    // Convert title to safe filename
-    const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'report'
-    link.setAttribute('download', `${safeTitle}.pdf`)
-    document.body.appendChild(link)
-    link.click()
-    link.parentNode.removeChild(link)
-  } catch (error) {
-    console.error('PDF Export Error:', error)
-    throw new Error('Failed to export PDF.')
-  }
-}
-
-export async function exportDocx(title, content) {
-  try {
-    const res = await api.post('/export/docx', { title, content }, { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([res.data]))
-    const link = document.createElement('a')
-    link.href = url
-
-    // Convert title to safe filename
-    const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'report'
-    link.setAttribute('download', `${safeTitle}.docx`)
-    document.body.appendChild(link)
-    link.click()
-    link.parentNode.removeChild(link)
-  } catch (error) {
-    console.error('DOCX Export Error:', error)
-    throw new Error('Failed to export DOCX.')
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Analytics API functions
